@@ -1,0 +1,68 @@
+import { motion } from 'motion/react'
+import { BarChart3, CreditCard, Home, Plus, Users } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router'
+import { useLedgerUI } from '@/ledger-ui'
+import { cx, Pressable, spring } from './ui'
+
+const TABS = [
+  { to: '/', label: 'خانه', icon: Home, end: true },
+  { to: '/patients', label: 'بیماران', icon: Users },
+  null, // the add button sits in the middle
+  { to: '/accounts', label: 'حساب‌ها', icon: CreditCard },
+  { to: '/reports', label: 'گزارش', icon: BarChart3 },
+] as const
+
+export function TabBar() {
+  const { pathname } = useLocation()
+  const { newTransaction } = useLedgerUI()
+  const patientMatch = pathname.match(/^\/patients\/(\d+)/)
+
+  return (
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-safe">
+      <div className="pointer-events-auto glass mx-4 flex max-w-md items-center justify-around rounded-[28px] border border-line-2 px-2 py-1.5 shadow-float sm:mx-auto">
+        {TABS.map((tab) =>
+          tab === null ? (
+            <Pressable
+              key="add"
+              aria-label="ثبت تراکنش"
+              onClick={() => newTransaction({ patientId: patientMatch ? Number(patientMatch[1]) : undefined })}
+              className="relative -my-4 grid size-14 place-items-center rounded-full bg-brand-gradient text-white shadow-[0_10px_30px_-6px] shadow-brand/70"
+              whileTap={{ scale: 0.9, rotate: 90 }}
+            >
+              <span className="absolute inset-0 animate-ping rounded-full bg-brand/30 [animation-duration:3s]" />
+              <Plus className="relative size-7" strokeWidth={2.6} />
+            </Pressable>
+          ) : (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              end={'end' in tab ? tab.end : false}
+              className="relative flex w-16 flex-col items-center gap-0.5 rounded-2xl py-1.5"
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="tab-pill"
+                      transition={spring}
+                      className="absolute inset-0 rounded-2xl bg-brand/12"
+                    />
+                  )}
+                  <tab.icon
+                    className={cx('relative size-[22px] transition-colors', isActive ? 'text-brand' : 'text-ink-3')}
+                    strokeWidth={isActive ? 2.4 : 2}
+                  />
+                  <span className={cx('relative text-[10.5px] font-semibold', isActive ? 'text-ink' : 'text-ink-3')}>
+                    {tab.label}
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ),
+        )}
+      </div>
+    </nav>
+  )
+}
+
+export const TAB_BAR_SPACE = 'pb-32'

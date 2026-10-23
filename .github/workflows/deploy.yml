@@ -1,0 +1,36 @@
+name: Deploy
+
+# Manual only: this ships to the live server that holds the ledger. CI gates
+# every push; this is the deliberate "go" button, pressed once main is good.
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # No checkout: the VPS pulls its own copy. The server-side authorized_keys
+      # entry for this key forces `cd /opt/taraz && ./ops/deploy.sh` whatever
+      # command is sent, so a leaked key can do exactly one thing.
+      - name: Set up deploy key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.TARAZ_DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy (ops/deploy.sh on the VPS)
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "this command is ignored server-side"
+
+      - name: Clean up deploy key
+        if: always()
+        run: shred -u ~/.ssh/deploy_key || rm -f ~/.ssh/deploy_key

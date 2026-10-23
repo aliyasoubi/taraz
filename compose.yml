@@ -1,0 +1,52 @@
+# Taraz on the VPS, next to patient-book.
+#
+#   docker compose up -d --build
+#
+# No port is published. patient-book's Caddy already owns 80/443; it reaches
+# this container over patient-book's Docker network as http://taraz:8000 —
+# see ops/README.md for the Caddy site block. Configuration comes from `.env`
+# beside this file; see .env.production.example.
+name: taraz
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  taraz:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-alpine}
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-python:3.12-slim}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    image: taraz:latest
+    restart: unless-stopped
+    environment:
+      ENV: production
+      DATABASE_URL: sqlite:////data/taraz.db
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      TIMEZONE: ${TIMEZONE:-Asia/Tehran}
+    volumes:
+      - taraz_data:/data
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    networks: [proxy]
+    logging: *logging
+
+volumes:
+  # The SQLite database and its backups. Losing it loses the ledger — back it up (ops/backup.sh).
+  taraz_data:
+
+networks:
+  proxy:
+    # patient-book's compose project is `patient-book`, its network `internal`.
+    name: ${PROXY_NETWORK:-patient-book_internal}
+    external: true
