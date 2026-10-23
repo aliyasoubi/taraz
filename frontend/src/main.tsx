@@ -1,14 +1,14 @@
-import './styles.css'
+import '@/app/styles.css'
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import { Toaster } from 'sonner'
 import { registerSW } from 'virtual:pwa-register'
-import { App } from './App'
-import { ApiError } from './lib/api'
-import { keys } from './lib/queries'
-import { usePrefs } from './lib/settings'
+import { App } from '@/app/App'
+import { ApiError } from '@/shared/api/client'
+import { keys } from '@/shared/api/keys'
+import { usePrefs } from '@/shared/lib/settings'
 
 // A 401 anywhere means the session ended: drop back to the login screen.
 const onError = (error: unknown) => {

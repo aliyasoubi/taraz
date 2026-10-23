@@ -36,7 +36,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from app.core.db import Base
 
 
 def _enum(cls: type[StrEnum], name: str) -> Enum:

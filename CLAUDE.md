@@ -18,10 +18,10 @@ Code, comments, tests, commits and docs are English. Every user-facing string
 lives in a locale file:
 
 - `frontend/src/locales/fa.json` — UI text, used as `t('section.key', { vars })`
-  from `src/lib/i18n.ts` (keys are type-checked). Enum labels come from
-  `src/lib/labels.ts`, which reads the same file.
-- `backend/app/i18n/fa.json` — Excel export labels, the words the importer
-  matches, demo data; used as `t("export.sheets.summary")` from `app.i18n`.
+  from `src/shared/lib/i18n.ts` (keys are type-checked). Enum labels come from
+  `src/shared/lib/labels.ts`, which reads the same file.
+- `backend/app/core/i18n/fa.json` — Excel export labels, the words the importer
+  matches, demo data; used as `t("export.sheets.summary")` from `app.core.i18n`.
 
 API errors are English codes (`raise HTTPException(404, "patient_not_found")`)
 with a matching `errors.<code>` entry in the frontend locale file.
@@ -29,16 +29,28 @@ with a matching `errors.<code>` entry in the frontend locale file.
 Persian characters are data, not text (folding tables, test fixtures), write
 them as `\uXXXX` escapes.
 
+## Architecture rules
+
+- Backend layers: `api/` (HTTP) → `services/` (rules + queries) → `models`, `core/`, `utils/`.
+  Routes stay thin; services never import FastAPI and raise `core.errors`
+  (`NotFoundError`, `ConflictError`, `InvalidError`), mapped in `api/errors.py`.
+- Frontend is feature-sliced: `features/<domain>/{api.ts, *Page.tsx, components/}`,
+  generic code in `shared/{api,lib,ui}`. `shared/` never imports from `features/`.
+  Inside `shared/ui`, import sibling files directly; elsewhere use `@/shared/ui`.
+- Keep logic out of components: pure functions in a `.ts` file with a test
+  (see `patients/ledger.ts`, `transactions/form/model.ts`).
+- Formatting is enforced: `ruff format` (backend), `prettier` (frontend).
+
 ## Ledger rules
 
-- Amounts are integer **rials**. Toman is display-only (`frontend/src/lib/format.ts`).
+- Amounts are integer **rials**. Toman is display-only (`frontend/src/shared/lib/format.ts`).
 - Balances are never stored. `backend/app/services/ledger.py` is the single
   definition (`signed_amount`, `counts_as_paid`, `effective_on`); reports and
   lists build on it. Don't recompute balances ad hoc elsewhere.
 - A cheque payment counts only when `cheque_status == cleared`, and lands on its
   due date. Pending/bounced cheques never reduce a balance.
 - Dates are stored Gregorian; everything shown is Jalali. Month boundaries come
-  from `JMonth` (backend) / `lib/jalali.ts` (frontend).
+  from `JMonth` (backend) / `shared/lib/jalali.ts` (frontend).
 
 ## Schema changes
 
@@ -55,7 +67,7 @@ Tests run the real migrations, so a model change without a migration fails CI.
 ```bash
 ./scripts/check-no-persian.sh
 cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && .venv/bin/pytest
-cd frontend && npm run lint && npm run typecheck && npm test && npm run build
+cd frontend && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 ## Frontend conventions

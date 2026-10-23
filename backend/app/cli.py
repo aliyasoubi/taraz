@@ -8,30 +8,17 @@ python -m app.cli seed-demo        # fake data, for trying the UI
 
 import argparse
 import getpass
-import random
-import sqlite3
 import sys
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from app.config import get_settings
-from app.db import SessionLocal
-from app.i18n import t
-from app.models import (
-    Account,
-    AccountKind,
-    ChequeStatus,
-    Patient,
-    PaymentMethod,
-    Transaction,
-    Treatment,
-    TreatmentKind,
-    TxType,
-)
-from app.security import hash_password
+from app.core.config import get_settings
+from app.core.db import SessionLocal
+from app.core.errors import ConflictError, InvalidError
+from app.core.security import hash_password
 from app.services import importer
-from app.services.jalali import parse_jalali, today
-from app.services.text import fold
+from app.services.backup import backup_sqlite, sqlite_path
+from app.services.demo import seed_demo
+from app.utils.jalali import parse_jalali, today
 
 
 def cmd_hash_password(_: argparse.Namespace) -> int:
@@ -47,24 +34,13 @@ def cmd_hash_password(_: argparse.Namespace) -> int:
     return 0
 
 
-def backup_sqlite(db_path: Path, out_dir: Path, keep: int) -> Path:
-    """Consistent copy of a live SQLite database (online backup API), pruned to `keep` files."""
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    target = out_dir / f"taraz-{stamp}.db"
-    with sqlite3.connect(db_path) as src, sqlite3.connect(target) as dst:
-        src.backup(dst)
-    for old in sorted(out_dir.glob("taraz-*.db"))[:-keep]:
-        old.unlink()
-    return target
-
-
 def cmd_backup(args: argparse.Namespace) -> int:
-    url = get_settings().database_url
-    if not url.startswith("sqlite:///"):
+    try:
+        db_path = sqlite_path(get_settings().database_url)
+    except InvalidError:
         print("backup only handles SQLite; use pg_dump for PostgreSQL", file=sys.stderr)
         return 1
-    target = backup_sqlite(Path(url.removeprefix("sqlite:///")), Path(args.out_dir), args.keep)
+    target = backup_sqlite(db_path, Path(args.out_dir), args.keep)
     print(target)
     return 0
 
@@ -96,80 +72,12 @@ def cmd_import_debtors(args: argparse.Namespace) -> int:
 
 
 def cmd_seed_demo(_: argparse.Namespace) -> int:
-    rng = random.Random(1405)
-    demo = t("demo")
     with SessionLocal() as db:
-        if importer.has_transactions(db):
+        try:
+            seed_demo(db)
+        except ConflictError:
             print("The ledger is not empty; demo data is only seeded into an empty database.")
             return 1
-        accounts = [Account(**{**a, "kind": AccountKind(a["kind"])}) for a in demo["accounts"]]
-        db.add_all(accounts)
-        db.flush()
-        now = today()
-        names = rng.sample(
-            [f"{f} {last}" for f in demo["firstNames"] for last in demo["lastNames"]], 18
-        )
-        for name in names:
-            p = Patient(
-                name=name, name_search=fold(name), phone=f"0912{rng.randint(1000000, 9999999)}"
-            )
-            db.add(p)
-            db.flush()
-            kind = rng.choice(
-                [
-                    TreatmentKind.GENERAL,
-                    TreatmentKind.IMPLANT,
-                    TreatmentKind.ORTHO,
-                    TreatmentKind.LAMINATE,
-                ]
-            )
-            case = Treatment(
-                patient_id=p.id,
-                title=demo["caseTitles"][kind],
-                kind=kind,
-                doctor=rng.choice([*demo["doctors"], None]),
-            )
-            db.add(case)
-            db.flush()
-            total = rng.choice([45, 120, 380, 900, 1500, 2600]) * 10_000_000
-            start = now - timedelta(days=rng.randint(20, 150))
-            db.add(
-                Transaction(
-                    patient_id=p.id,
-                    treatment_id=case.id,
-                    type=TxType.CHARGE,
-                    amount=total,
-                    occurred_on=start,
-                    description=demo["planNote"],
-                )
-            )
-            paid = 0
-            for _k in range(rng.randint(0, 4)):
-                amount = rng.choice([5, 10, 15, 30, 50]) * 10_000_000
-                if paid + amount > total:
-                    break
-                paid += amount
-                d = start + timedelta(days=rng.randint(0, (now - start).days))
-                cheque = rng.random() < 0.15
-                db.add(
-                    Transaction(
-                        patient_id=p.id,
-                        treatment_id=case.id,
-                        type=TxType.PAYMENT,
-                        amount=amount,
-                        occurred_on=d,
-                        payer_name=rng.choice([None, None, None, *demo["payers"]]),
-                        account_id=rng.choice(accounts).id,
-                        method=PaymentMethod.CHEQUE
-                        if cheque
-                        else rng.choice(
-                            [PaymentMethod.CARD, PaymentMethod.POS, PaymentMethod.TRANSFER]
-                        ),
-                        cheque_due_on=d + timedelta(days=rng.randint(10, 60)) if cheque else None,
-                        cheque_status=ChequeStatus.PENDING if cheque else None,
-                    )
-                )
-        db.commit()
     print("Seeded demo data.")
     return 0
 

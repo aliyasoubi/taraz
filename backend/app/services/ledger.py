@@ -74,6 +74,19 @@ class Totals:
     last_activity: date | None = None
     tx_count: int = 0
 
+    @classmethod
+    def from_row(cls, row: Any) -> "Totals":
+        """From a row of `totals_select`; outer-joined rows may carry NULLs."""
+        return cls(
+            balance=int(row.balance or 0),
+            charged=int(row.charged or 0),
+            paid=int(row.paid or 0),
+            discounted=int(row.discounted or 0),
+            pending_cheques=int(row.pending_cheques or 0),
+            last_activity=row.last_activity,
+            tx_count=int(row.tx_count or 0),
+        )
+
 
 def totals_by(
     db: Session, group_col: GroupCol, keys: list[int] | None = None, as_of: date | None = None
@@ -83,19 +96,7 @@ def totals_by(
         if not keys:
             return {}
         stmt = stmt.where(group_col.in_(keys))
-    return {
-        row.key: Totals(
-            balance=int(row.balance),
-            charged=int(row.charged),
-            paid=int(row.paid),
-            discounted=int(row.discounted),
-            pending_cheques=int(row.pending_cheques),
-            last_activity=row.last_activity,
-            tx_count=int(row.tx_count),
-        )
-        for row in db.execute(stmt)
-        if row.key is not None
-    }
+    return {row.key: Totals.from_row(row) for row in db.execute(stmt) if row.key is not None}
 
 
 def patient_totals(

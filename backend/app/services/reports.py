@@ -3,9 +3,9 @@ from datetime import date, timedelta
 from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.i18n import t
+from app.core.i18n import t
 from app.models import Account, ChequeStatus, Patient, Transaction, TxType
-from app.schemas import (
+from app.schemas.reports import (
     BreakdownRow,
     Dashboard,
     DebtorRow,
@@ -15,8 +15,8 @@ from app.schemas import (
     StatementRow,
 )
 from app.services import ledger
-from app.services.jalali import JMonth, today
-from app.services.transactions import to_out, tx_select
+from app.services.transactions import tx_select, tx_to_out
+from app.utils.jalali import JMonth, today
 
 T = Transaction
 
@@ -106,8 +106,8 @@ def dashboard(db: Session) -> Dashboard:
             )
             for pid, t in debtors[:5]
         ],
-        upcoming_cheques=[to_out(tx) for tx in upcoming],
-        recent=[to_out(tx) for tx in recent],
+        upcoming_cheques=[tx_to_out(tx) for tx in upcoming],
+        recent=[tx_to_out(tx) for tx in recent],
     )
 
 
@@ -210,5 +210,5 @@ def monthly(db: Session, month: JMonth) -> MonthlyReport:
             for method, amount, count in method_rows
         ],
         rows=rows,
-        cheques_due=[to_out(tx) for tx in cheques_due],
+        cheques_due=[tx_to_out(tx) for tx in cheques_due],
     )

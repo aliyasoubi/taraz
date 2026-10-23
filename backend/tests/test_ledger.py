@@ -159,3 +159,21 @@ def test_suggestions_offer_previous_payers(api: Api) -> None:
     api.tx(pid, "payment", 1, payer_name="Mohammad", method="card")
     api.tx(pid, "payment", 1, payer_name="Zahra", method="card")
     assert api.c.get("/api/suggestions").json()["payers"] == ["Mohammad", "Zahra"]
+
+
+def test_domain_errors_map_to_http_status(api: Api) -> None:
+    assert api.c.get("/api/patients/999").json() == {"detail": "patient_not_found"}
+    assert api.c.get("/api/patients/999").status_code == 404
+    assert api.c.patch("/api/treatments/999", json={"title": "x"}).status_code == 404
+    pid = api.patient()
+    r = api.c.post(
+        "/api/transactions",
+        json={
+            "patient_id": pid,
+            "type": "payment",
+            "amount": 1,
+            "occurred_on": "2026-10-01",
+            "account_id": 999,
+        },
+    )
+    assert (r.status_code, r.json()["detail"]) == (422, "account_not_found")
