@@ -20,8 +20,8 @@ lives in a locale file:
 - `frontend/src/locales/fa.json` — UI text, used as `t('section.key', { vars })`
   from `src/lib/i18n.ts` (keys are type-checked). Enum labels come from
   `src/lib/labels.ts`, which reads the same file.
-- `backend/app/i18n/fa.json` — Excel export labels, the words the importer
-  matches, demo data; used as `t("export.sheets.summary")` from `app.i18n`.
+- `backend/app/core/i18n/fa.json` — Excel export labels, the words the importer
+  matches, demo data; used as `t("export.sheets.summary")` from `app.core.i18n`.
 
 API errors are English codes (`raise HTTPException(404, "patient_not_found")`)
 with a matching `errors.<code>` entry in the frontend locale file.

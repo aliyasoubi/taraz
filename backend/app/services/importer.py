@@ -10,7 +10,7 @@ Names are matched loosely (letter variants, dots, spacing). A trailing `imp`
 treatment case of the same patient, as the sheet did with separate "… imp" rows.
 
 The sheet name and every Persian word matched here come from the locale file
-(``app/i18n/fa.json``, section ``import``).
+(``app/core/i18n/fa.json``, section ``import``).
 """
 
 import re
@@ -22,7 +22,7 @@ from openpyxl import load_workbook
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.i18n import t
+from app.core.i18n import t
 from app.models import (
     ChequeStatus,
     Patient,
@@ -32,8 +32,8 @@ from app.models import (
     TreatmentKind,
     TxType,
 )
-from app.services.jalali import parse_jalali
-from app.services.text import fold, tidy
+from app.utils.jalali import parse_jalali
+from app.utils.text import fold, tidy
 
 SHEET: str = t("import.sheet")
 CHEQUE: str = t("import.cheque")

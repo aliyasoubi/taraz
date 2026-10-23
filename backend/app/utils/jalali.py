@@ -4,8 +4,8 @@ from zoneinfo import ZoneInfo
 
 import jdatetime
 
-from app.config import get_settings
-from app.i18n import t
+from app.core.config import get_settings
+from app.core.i18n import t
 
 
 @dataclass(frozen=True)

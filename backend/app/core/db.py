@@ -1,13 +1,12 @@
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import Depends
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 
 class Base(DeclarativeBase):
@@ -42,11 +41,9 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 
 def get_db() -> Iterator[Session]:
+    """One session per request; FastAPI wires it up in app/api/deps.py."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-DbSession = Annotated[Session, Depends(get_db)]

@@ -1,24 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, Field
 
-from app.config import SettingsDep
-from app.security import (
-    COOKIE_NAME,
-    issue_session,
-    login_throttle,
-    require_user,
-    verify_password,
-)
+from app.api.deps import SettingsDep, require_user
+from app.core.security import COOKIE_NAME, issue_session, login_throttle, verify_password
+from app.schemas.auth import LoginIn, Me
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class LoginIn(BaseModel):
-    password: str = Field(min_length=1, max_length=256)
-
-
-class Me(BaseModel):
-    authenticated: bool
 
 
 @router.post("/login", response_model=Me)

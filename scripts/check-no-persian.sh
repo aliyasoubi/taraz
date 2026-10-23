@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Fails if Persian/Arabic-script text appears anywhere except the two locale files.
-# User-facing text belongs in frontend/src/locales/fa.json or backend/app/i18n/fa.json;
+# User-facing text belongs in a locale file (src/locales/fa.json, app/core/i18n/fa.json);
 # characters that are data (folding tables, test fixtures) are written as \uXXXX escapes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-allowed='^(frontend/src/locales/fa\.json|backend/app/i18n/fa\.json)$'
+allowed='(^|/)(locales|i18n)/fa\.json$'
 binary='\.(png|jpe?g|ico|webp|woff2?|ttf|otf|xlsx|db)$'
 status=0
 

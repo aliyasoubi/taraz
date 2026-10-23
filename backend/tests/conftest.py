@@ -14,7 +14,7 @@ os.environ.update(
     STATIC_DIR=str(_tmp / "no-static"),
 )
 
-from app.security import hash_password  # noqa: E402
+from app.core.security import hash_password  # noqa: E402
 
 PASSWORD = "correct horse battery"
 os.environ["AUTH_PASSWORD_HASH"] = hash_password(PASSWORD)
@@ -24,9 +24,9 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
-from app.db import Base, engine  # noqa: E402
+from app.core.db import Base, engine  # noqa: E402
+from app.core.security import login_throttle  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.security import login_throttle  # noqa: E402
 
 BACKEND = Path(__file__).resolve().parent.parent
 

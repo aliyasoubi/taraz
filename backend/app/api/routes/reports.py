@@ -1,22 +1,26 @@
+from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Query, Response
 
-from app.db import DbSession
-from app.schemas import Dashboard, MonthlyReport
+from app.api.deps import DbSession
+from app.schemas.reports import Dashboard, MonthlyReport
 from app.services import export, reports
-from app.services.jalali import JMonth, today
+from app.utils.jalali import JMonth, today
 
 router = APIRouter(tags=["reports"])
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
+Year = Annotated[int | None, Query(ge=1300, le=1500)]
+Month = Annotated[int | None, Query(ge=1, le=12)]
+
+
 def _month(year: int | None, month: int | None) -> JMonth:
+    """The requested Jalali month, or the current one when none is given."""
     if year is None or month is None:
         return JMonth.of(today())
-    if not 1 <= month <= 12 or not 1300 <= year <= 1500:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "invalid_month")
     return JMonth(year, month)
 
 
@@ -39,8 +43,8 @@ def get_dashboard(db: DbSession) -> Dashboard:
 @router.get("/reports/monthly", response_model=MonthlyReport)
 def monthly_report(
     db: DbSession,
-    year: int | None = None,
-    month: int | None = None,
+    year: Year = None,
+    month: Month = None,
 ) -> MonthlyReport:
     return reports.monthly(db, _month(year, month))
 
@@ -48,8 +52,8 @@ def monthly_report(
 @router.get("/reports/monthly.xlsx")
 def monthly_report_xlsx(
     db: DbSession,
-    year: int | None = None,
-    month: int | None = None,
+    year: Year = None,
+    month: Month = None,
 ) -> Response:
     m = _month(year, month)
     report = reports.monthly(db, m)

@@ -3,10 +3,10 @@ from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
 
-from app.db import SessionLocal
-from app.i18n import t
+from app.core.db import SessionLocal
+from app.core.i18n import t
 from app.services import importer
-from app.services.jalali import JMonth, parse_jalali
+from app.utils.jalali import JMonth, parse_jalali
 from tests.conftest import Api
 
 # Mehr 1405 = 2026-09-23 … 2026-10-22; Aban 1405 starts 2026-10-23.
@@ -121,8 +121,8 @@ def test_import_debtors_sheet(tmp_path: Path, api: Api) -> None:
 
 
 def test_sqlite_backup_is_readable_and_pruned(tmp_path: Path, api: Api) -> None:
-    from app.cli import backup_sqlite
-    from app.config import get_settings
+    from app.core.config import get_settings
+    from app.services.backup import backup_sqlite
 
     api.patient("Backup Check")
     db_path = Path(get_settings().database_url.removeprefix("sqlite:///"))

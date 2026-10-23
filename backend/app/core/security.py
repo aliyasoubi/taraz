@@ -16,9 +16,8 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
-from fastapi import HTTPException, Request, status
 
-from app.config import Settings, SettingsDep
+from app.core.config import Settings
 
 COOKIE_NAME = "taraz_session"
 CSRF_HEADER = "x-requested-with"
@@ -57,20 +56,12 @@ def issue_session(settings: Settings) -> tuple[str, int]:
     return token, max_age
 
 
-def _session_valid(token: str, settings: Settings) -> bool:
+def session_valid(token: str, settings: Settings) -> bool:
     try:
         claims = jwt.decode(token, settings.secret_key, algorithms=[_ALGORITHM])
     except jwt.PyJWTError:
         return False
     return claims.get("sub") == "owner" and claims.get("pwd") == settings.auth_password_hash[-12:]
-
-
-def require_user(request: Request, settings: SettingsDep) -> None:
-    token = request.cookies.get(COOKIE_NAME)
-    if not token or not _session_valid(token, settings):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "login_required")
-    if request.method not in ("GET", "HEAD", "OPTIONS") and CSRF_HEADER not in request.headers:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "forbidden")
 
 
 class LoginThrottle:
