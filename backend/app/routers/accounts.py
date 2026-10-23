@@ -55,7 +55,7 @@ def _accounts_with_totals(db: Session, account_id: int | None = None) -> list[Ac
 def _one(db: Session, account_id: int) -> AccountOut:
     found = _accounts_with_totals(db, account_id)
     if not found:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "حساب پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "account_not_found")
     return found[0]
 
 
@@ -81,7 +81,7 @@ def create_account(body: AccountIn, db: DbSession) -> AccountOut:
 def update_account(account_id: int, body: AccountPatch, db: DbSession) -> AccountOut:
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "حساب پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "account_not_found")
     for key, value in body.model_dump(exclude_unset=True).items():
         if value is None and key in ("title", "kind", "color", "is_archived"):
             continue
@@ -94,12 +94,12 @@ def update_account(account_id: int, body: AccountPatch, db: DbSession) -> Accoun
 def delete_account(account_id: int, db: DbSession) -> None:
     account = db.get(Account, account_id)
     if account is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "حساب پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "account_not_found")
     used = db.scalar(select(func.count()).where(Transaction.account_id == account_id))
     if used:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "این حساب تراکنش دارد؛ به جای حذف، بایگانی‌اش کنید",
+            "account_in_use",
         )
     db.delete(account)
     db.commit()

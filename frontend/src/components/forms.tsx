@@ -14,9 +14,10 @@ import type { Account, AccountKind, Patient, PatientDetail, Treatment, Treatment
 import { AccountCard } from './AccountCard'
 import { Sheet } from './Sheet'
 import { Button, Chip, cx, Field, Pressable, Segmented, TextArea, TextInput } from './ui'
+import { t } from '@/lib/i18n'
 
 export function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : 'ارتباط با سرور برقرار نشد'
+  return err instanceof ApiError ? err.message : t('errors.network')
 }
 
 // ── Patient ───────────────────────────────────────────────────────────────
@@ -44,7 +45,7 @@ export function PatientFormSheet({
       { id: patient?.id, data: { name, phone: phone || null, note: note || null } },
       {
         onSuccess: (p) => {
-          toast.success(patient ? 'اطلاعات بیمار به‌روز شد' : 'بیمار اضافه شد')
+          toast.success(patient ? t('patientForm.updated') : t('patientForm.added'))
           onSaved?.(p)
           onClose()
         },
@@ -56,18 +57,18 @@ export function PatientFormSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title={patient ? 'ویرایش بیمار' : 'بیمار جدید'}
+      title={patient ? t('patientForm.editTitle') : t('patientForm.newTitle')}
       footer={
         <Button className="w-full" onClick={submit} loading={save.isPending} disabled={!name.trim()}>
-          {patient ? 'ذخیره' : 'افزودن بیمار'}
+          {patient ? t('common.save') : t('patientForm.add')}
         </Button>
       }
     >
       <div className="space-y-4">
-        <Field label="نام و نام خانوادگی">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="مثلاً آرمان صبوری" autoFocus />
+        <Field label={t('patientForm.name')}>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder={t('patientForm.namePlaceholder')} autoFocus />
         </Field>
-        <Field label="شماره تماس" hint="اختیاری">
+        <Field label={t('patientForm.phone')} hint={t('common.optional')}>
           <TextInput
             value={phone}
             onChange={(e) => setPhone(digitsOnly(e.target.value))}
@@ -77,7 +78,7 @@ export function PatientFormSheet({
             placeholder="09xx xxx xxxx"
           />
         </Field>
-        <Field label="یادداشت" hint="اختیاری">
+        <Field label={t('patientForm.note')} hint={t('common.optional')}>
           <TextArea value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
       </div>
@@ -132,9 +133,9 @@ export function TreatmentFormSheet({
         },
       },
       {
-        onSuccess: (t) => {
-          toast.success(treatment ? 'پرونده به‌روز شد' : 'پرونده درمان ساخته شد')
-          onSaved?.(t)
+        onSuccess: (saved) => {
+          toast.success(treatment ? t('treatmentForm.updated') : t('treatmentForm.created'))
+          onSaved?.(saved)
           onClose()
         },
         onError: (e) => toast.error(errorMessage(e)),
@@ -145,17 +146,17 @@ export function TreatmentFormSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title={treatment ? 'ویرایش پرونده' : 'پرونده درمان جدید'}
-      subtitle="مثل ردیف‌های «imp» در اکسل: مانده هر درمان جداگانه حساب می‌شود"
+      title={treatment ? t('treatmentForm.editTitle') : t('treatmentForm.newTitle')}
+      subtitle={t('treatmentForm.subtitle')}
       footer={
         <Button className="w-full" onClick={submit} loading={save.isPending}>
-          {treatment ? 'ذخیره' : 'ساخت پرونده'}
+          {treatment ? t('common.save') : t('treatmentForm.create')}
         </Button>
       }
     >
       <div className="space-y-5">
         <div>
-          <span className="mb-2 block text-[13px] font-medium text-ink-2">نوع درمان</span>
+          <span className="mb-2 block text-[13px] font-medium text-ink-2">{t('treatmentForm.kind')}</span>
           <div className="flex flex-wrap gap-2">
             {KIND_ORDER.map((k) => (
               <Chip key={k} active={kind === k} onClick={() => setKind(k)}>
@@ -164,11 +165,11 @@ export function TreatmentFormSheet({
             ))}
           </div>
         </div>
-        <Field label="عنوان" hint="خالی بماند، نوع درمان عنوان می‌شود">
+        <Field label={t('treatmentForm.title')} hint={t('treatmentForm.titleHint')}>
           <TextInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder={TREATMENT_LABEL[kind]} />
         </Field>
-        <Field label="پزشک معالج" hint="اختیاری">
-          <TextInput value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="نام پزشک" />
+        <Field label={t('treatmentForm.doctor')} hint={t('common.optional')}>
+          <TextInput value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder={t('treatmentForm.doctorPlaceholder')} />
         </Field>
         {doctors.length > 0 && (
           <div className="-mt-3 flex flex-wrap gap-2">
@@ -184,8 +185,8 @@ export function TreatmentFormSheet({
             value={done ? 'done' : 'active'}
             onChange={(v) => setDone(v === 'done')}
             options={[
-              { value: 'active', label: 'در حال درمان' },
-              { value: 'done', label: 'پایان‌یافته' },
+              { value: 'active', label: t('treatmentForm.active') },
+              { value: 'done', label: t('treatmentForm.completed') },
             ]}
           />
         )}
@@ -237,7 +238,7 @@ export function AccountFormSheet({
       },
       {
         onSuccess: (a) => {
-          toast.success(account ? 'حساب به‌روز شد' : 'حساب اضافه شد')
+          toast.success(account ? t('accountForm.updated') : t('accountForm.added'))
           onSaved?.(a)
           onClose()
         },
@@ -249,11 +250,11 @@ export function AccountFormSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title={account ? 'ویرایش حساب' : 'حساب مقصد جدید'}
-      subtitle="کارت، کارتخوان، صندوق یا حساب شخص ثالث"
+      title={account ? t('accountForm.editTitle') : t('accountForm.newTitle')}
+      subtitle={t('accountForm.subtitle')}
       footer={
         <Button className="w-full" onClick={submit} loading={save.isPending}>
-          {account ? 'ذخیره' : 'افزودن حساب'}
+          {account ? t('common.save') : t('accountForm.add')}
         </Button>
       }
     >
@@ -261,13 +262,13 @@ export function AccountFormSheet({
         <AccountCard
           account={{
             ...form,
-            title: form.title || autoTitle || 'حساب جدید',
+            title: form.title || autoTitle || t('common.newAccount'),
             received_this_month: account?.received_this_month ?? 0,
           }}
           className="mx-auto max-w-sm"
         />
         <div>
-          <span className="mb-2 block text-[13px] font-medium text-ink-2">نوع</span>
+          <span className="mb-2 block text-[13px] font-medium text-ink-2">{t('accountForm.kind')}</span>
           <div className="flex flex-wrap gap-2">
             {ACCOUNT_KINDS.map((k) => (
               <Chip key={k} active={form.kind === k} onClick={() => set('kind', k)}>
@@ -276,11 +277,11 @@ export function AccountFormSheet({
             ))}
           </div>
         </div>
-        <Field label="صاحب حساب" hint={form.kind === 'third_party' ? 'مثلاً آقای قمی — کسی که بیمار مستقیم به او واریز می‌کند' : undefined}>
-          <TextInput value={form.owner_name ?? ''} onChange={(e) => set('owner_name', e.target.value)} placeholder="نام صاحب حساب" />
+        <Field label={t('accountForm.owner')} hint={form.kind === 'third_party' ? t('accountForm.ownerThirdPartyHint') : undefined}>
+          <TextInput value={form.owner_name ?? ''} onChange={(e) => set('owner_name', e.target.value)} placeholder={t('accountForm.ownerPlaceholder')} />
         </Field>
         <div>
-          <span className="mb-2 block text-[13px] font-medium text-ink-2">بانک</span>
+          <span className="mb-2 block text-[13px] font-medium text-ink-2">{t('accountForm.bank')}</span>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
             {BANKS.map((b) => (
               <Chip key={b} active={form.bank === b} onClick={() => set('bank', form.bank === b ? '' : b)}>
@@ -290,10 +291,10 @@ export function AccountFormSheet({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="عنوان کارت">
-            <TextInput value={form.title ?? ''} onChange={(e) => set('title', e.target.value)} placeholder={autoTitle || 'اختیاری'} />
+          <Field label={t('accountForm.cardTitle')}>
+            <TextInput value={form.title ?? ''} onChange={(e) => set('title', e.target.value)} placeholder={autoTitle || t('common.optional')} />
           </Field>
-          <Field label="۴ رقم آخر کارت">
+          <Field label={t('accountForm.last4')}>
             <TextInput
               value={form.card_last4 ?? ''}
               onChange={(e) => set('card_last4', digitsOnly(e.target.value).slice(0, 4))}
@@ -305,7 +306,7 @@ export function AccountFormSheet({
           </Field>
         </div>
         <div>
-          <span className="mb-2 block text-[13px] font-medium text-ink-2">رنگ کارت</span>
+          <span className="mb-2 block text-[13px] font-medium text-ink-2">{t('accountForm.color')}</span>
           <div className="flex flex-wrap gap-3">
             {Object.entries(ACCOUNT_COLORS).map(([key, [a, b]]) => (
               <Pressable

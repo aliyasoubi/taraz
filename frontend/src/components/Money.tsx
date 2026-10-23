@@ -95,7 +95,7 @@ export function AnimatedMoney({
   )
 }
 
-/** «۶۵۰» large with «میلیون» small beside it — for narrow tiles. */
+/** The number large with its scale word (million, billion) small beside it — for narrow tiles. */
 export function CompactMoney({ value, className }: { value: number; className?: string }) {
   const { unit, hideAmounts } = usePrefs()
   if (hideAmounts) return <span className={className}>••••</span>

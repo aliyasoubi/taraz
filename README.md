@@ -1,38 +1,63 @@
-<div dir="rtl">
+# Taraz — patient balance ledger
 
-# تراز — حساب‌وکتاب بیماران
+A single-user web app (PWA) for tracking what each patient owes, replacing the
+practice's "accounting – admissions" Excel workbook. It is designed for the
+iPhone: open it in Safari and use **Add to Home Screen** to install it as a
+standalone app. The interface is in Persian (right-to-left, Jalali calendar).
 
-وب‌اپ تک‌کاربره (PWA) برای پیگیری مانده حساب بیماران، جایگزین فایل اکسل «حسابرسی - پذیرش».
-برای آیفون طراحی شده و از Safari با **Add to Home Screen** مثل یک اپ مستقل نصب می‌شود.
+## What it does
 
-## چه کاری انجام می‌دهد
+- **A ledger per patient** with a live balance — the spreadsheet's "balance"
+  column, but computed instead of typed by hand.
+- **Every payment is recorded like a bank transfer**: the *source* (who actually
+  paid — the patient, or someone else, e.g. Mohammad paying for Ali's treatment)
+  and the *destination* (which account received it — your own card, a card
+  terminal, the cash box, or a third party such as Mr. Ghomi whom the patient was
+  asked to pay directly).
+- **Separate treatment cases** per patient (general, implant, orthodontics,
+  laminate …), each with its own balance — what the spreadsheet's `imp` rows did.
+- **Cheques**: a cheque does not reduce the debt until it clears. Due dates are
+  listed on the Cheques screen; one tap marks a cheque cleared or bounced.
+- **Month-end report** on the Jalali calendar: each patient's opening and closing
+  balance, receipts per destination account and per payment method, cheques due
+  that month, and an Excel export.
+- **Destination accounts** drawn as bank cards, with this month's receipts.
+- Discounts and refunds, a full Excel backup, rial/toman display, dark/light
+  themes, and a "hide amounts" mode.
+- The amount field spells the number out in words and has a "000" key, so
+  typos like the spreadsheet's `150,000,00` are caught before saving.
 
-- **دفتر حساب هر بیمار** با مانده لحظه‌ای؛ مثل ستون «مانده حساب» اکسل، ولی خودکار و بدون خطای دستی.
-- **هر پرداخت مثل یک تراکنش بانکی**: *مبدا* (چه کسی پول را زد؛ خود بیمار یا شخص دیگر، مثلاً محمد برای درمان علی) و *مقصد* (به کدام حساب رفت؛ کارت خودتان، کارتخوان، صندوق، یا حساب شخص ثالث مثل آقای قمی).
-- **پرونده‌های درمان جدا** برای هر بیمار (عمومی، ایمپلنت، ارتودنسی، لمینت …)؛ همان کاری که ردیف‌های `imp` در اکسل می‌کردند.
-- **چک‌ها**: چک تا وقتی وصول نشده از بدهی کم نمی‌شود، سررسیدها در صفحه «چک‌ها» دیده می‌شوند و با یک لمس «وصول شد» یا «برگشت خورد» ثبت می‌شوند.
-- **گزارش پایان ماه** (تقویم شمسی): مانده ابتدا و انتهای ماه هر بیمار، دریافتی به تفکیک حساب مقصد و روش پرداخت، چک‌های سررسید ماه، و خروجی اکسل.
-- **حساب‌های مقصد** به شکل کارت بانکی، با جمع واریزی هر ماه.
-- تخفیف و استرداد، پشتیبان کامل اکسل، ریال/تومان، تم تیره/روشن، و حالت «پنهان کردن مبالغ».
-- عدد مبلغ هنگام ورود **به حروف** نوشته می‌شود و دکمه «۰۰۰» دارد؛ اشتباه‌هایی مثل `150,000,00` اکسل دیگر پیش نمی‌آید.
+## Stack
 
-## تکنولوژی
+| Part      | Choice                                                                 | Why                                                    |
+| --------- | ---------------------------------------------------------------------- | ------------------------------------------------------ |
+| Backend   | Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2                | Typed API, versioned migrations, simple to test        |
+| Database  | SQLite (WAL)                                                           | One user: a single file, backed up with one command    |
+| Frontend  | React 19, TypeScript, Vite, Tailwind CSS 4, Motion, TanStack Query     | A light PWA with smooth animation on iPhone            |
+| Calendar  | jalaali-js / jdatetime                                                 | All dates and reports are Jalali                       |
+| Hosting   | One Docker container behind patient-book's Caddy                      | The data stays on your own server                      |
 
-| بخش | انتخاب | چرا |
-| --- | --- | --- |
-| Backend | Python 3.12، FastAPI، SQLAlchemy 2، Alembic، Pydantic 2 | API تایپ‌شده، مهاجرت‌های نسخه‌دار، تست ساده |
-| پایگاه داده | SQLite (WAL) | تک‌کاربره؛ یک فایل، پشتیبان‌گیری با یک دستور |
-| Frontend | React 19، TypeScript، Vite، Tailwind CSS 4، Motion، TanStack Query | PWA سبک با انیمیشن‌های روان روی آیفون |
-| تقویم | jalaali-js / jdatetime | همه تاریخ‌ها و گزارش‌ها شمسی |
-| استقرار | یک کانتینر Docker پشت Caddy پروژه patient-book | داده روی سرور خودتان می‌ماند |
+Amounts are always stored as integer **rials**. Balances are never stored; they
+are always derived from the transactions, so they cannot drift from them.
 
-مبالغ همیشه به **ریال** و به صورت عدد صحیح ذخیره می‌شوند؛ مانده هیچ‌جا ذخیره نمی‌شود و همیشه از روی تراکنش‌ها محاسبه می‌شود تا هرگز با آن‌ها ناهمخوان نشود.
+## Language and text
 
-## اجرای محلی
+The source code, comments, tests and docs are English. Every user-facing string
+lives in a locale file:
 
-پیش‌نیاز: Python 3.12 و Node 22.
+- `frontend/src/locales/fa.json` — the app's UI, read through `t('section.key')`
+  (`frontend/src/lib/i18n.ts`).
+- `backend/app/i18n/fa.json` — text the backend writes into Excel exports, the
+  words the importer matches in the old workbook, and the demo data.
 
-</div>
+API errors are English codes (`patient_not_found`); the frontend translates them.
+`scripts/check-no-persian.sh` (run in CI) fails if Persian text appears anywhere
+else; characters that are data rather than text (letter-folding tables, test
+fixtures) are written as `\uXXXX` escapes.
+
+## Running locally
+
+Requires Python 3.12 and Node 22.
 
 ```bash
 cd backend
@@ -42,11 +67,7 @@ cp .env.example .env
 .venv/bin/python -m app.cli hash-password
 ```
 
-<div dir="rtl">
-
-خروجی دستور آخر (`AUTH_PASSWORD_HASH='…'`) را در `backend/.env` بگذارید، سپس:
-
-</div>
+Put the printed `AUTH_PASSWORD_HASH='…'` line into `backend/.env`, then:
 
 ```bash
 .venv/bin/alembic upgrade head
@@ -60,14 +81,11 @@ npm install
 npm run dev
 ```
 
-<div dir="rtl">
+The app opens on `http://localhost:5173` (Vite proxies `/api` to port 8000). To
+try it on an iPhone on the same network, open `http://<your-mac-ip>:5173`.
+`seed-demo` only creates fake data for trying the UI, and only on an empty database.
 
-برنامه روی `http://localhost:5173` باز می‌شود (Vite درخواست‌های `/api` را به پورت ۸۰۰۰ می‌فرستد). برای دیدن روی آیفون در همان شبکه، آدرس `http://<IP-مک>:5173` را باز کنید.
-`seed-demo` فقط داده‌ی ساختگی برای امتحان رابط کاربری می‌سازد و فقط روی پایگاه داده‌ی خالی اجرا می‌شود.
-
-## تست و کیفیت کد
-
-</div>
+## Tests and code quality
 
 ```bash
 cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && .venv/bin/pytest
@@ -77,55 +95,58 @@ cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv
 cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
-<div dir="rtl">
-
-همین‌ها در GitHub Actions (`.github/workflows/ci.yml`) روی هر push اجرا می‌شوند، به‌علاوه‌ی ساخت image داکر.
-
-## انتقال مانده‌ها از اکسل
-
-برگه «لیست بدهکاران» را می‌توان یک‌بار به عنوان مانده‌ی اول دوره وارد کرد. هر ردیف یک «هزینه» با توضیح «مانده انتقالی از اکسل» می‌شود؛ ردیف‌های چک علاوه بر آن یک چک «در انتظار وصول» با همان مبلغ و سررسید می‌سازند. ردیف‌های `imp` / `ارتو` به پرونده‌ی ایمپلنت / ارتودنسی همان بیمار می‌روند.
-
-</div>
-
 ```bash
-.venv/bin/python -m app.cli import-debtors "/path/to/حسابرسی - پذیرش.xlsx" --as-of 1405-08-01 --dry-run
-.venv/bin/python -m app.cli import-debtors "/path/to/حسابرسی - پذیرش.xlsx" --as-of 1405-08-01
+./scripts/check-no-persian.sh
 ```
 
-<div dir="rtl">
+GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, and
+builds the Docker image.
 
-اول با `--dry-run` اجرا کنید. اگر بیماری هم ردیف مانده‌ی ساده و هم ردیف چک داشته باشد، شماره‌ی ردیف‌ها برای بازبینی چاپ می‌شود؛ اکسل مشخص نمی‌کند چک‌ها همان مانده را پوشش می‌دهند یا اضافه بر آن هستند. روی سرور:
+## Importing balances from the old workbook
 
-</div>
+The debtors sheet can be imported once as opening balances. Each row becomes a
+charge noted as carried over from Excel; cheque rows also create a pending
+cheque for the same amount and due date. Rows ending in `imp` / ortho go to the
+patient's implant / orthodontics case.
 
 ```bash
-docker compose cp "حسابرسی - پذیرش.xlsx" taraz:/tmp/old.xlsx
+.venv/bin/python -m app.cli import-debtors /path/to/workbook.xlsx --as-of 1405-08-01 --dry-run
+.venv/bin/python -m app.cli import-debtors /path/to/workbook.xlsx --as-of 1405-08-01
+```
+
+Run it with `--dry-run` first. When a patient has both a plain balance row and
+cheque rows, the row numbers are printed for review: the workbook does not say
+whether the cheques cover that balance or come on top of it. On the server:
+
+```bash
+docker compose cp /path/to/workbook.xlsx taraz:/tmp/old.xlsx
 docker compose exec taraz python -m app.cli import-debtors /tmp/old.xlsx --as-of 1405-08-01 --dry-run
 ```
 
-<div dir="rtl">
+## Deployment
 
-## استقرار
+See [ops/README.md](ops/README.md). In short: on the VPS that runs patient-book,
+clone into `/opt/taraz`, fill in `.env`, run `docker compose up -d --build`, and
+add a site block to patient-book's Caddy.
 
-راهنمای کامل در [ops/README.md](ops/README.md). خلاصه: روی همان VPS که patient-book اجرا می‌شود، در `/opt/taraz` کلون کنید، `.env` را پر کنید، `docker compose up -d --build`، و یک site block به Caddy پروژه patient-book اضافه کنید.
-
-## ساختار پروژه
-
-</div>
+## Layout
 
 ```
 backend/
   app/
-    models.py        جدول‌ها: بیمار، پرونده درمان، حساب مقصد، تراکنش
-    services/        محاسبه مانده (ledger)، گزارش ماهانه، خروجی اکسل، ورود از اکسل
+    models.py        tables: patient, treatment case, destination account, transaction
+    services/        balance arithmetic (ledger), monthly report, Excel export/import
     routers/         API: auth, patients, transactions, accounts, reports
+    i18n/            backend locale file (fa.json)
     cli.py           hash-password, backup, import-debtors, seed-demo
-  alembic/           مهاجرت‌های پایگاه داده
+  alembic/           database migrations
   tests/
 frontend/
   src/
-    pages/           خانه، بیماران، پرونده بیمار، حساب‌ها، گزارش، چک‌ها، تنظیمات
-    components/      شیت‌ها، فرم تراکنش، رسید، ورودی مبلغ، تقویم شمسی …
-    lib/             API، فرمت ریال/تومان، تاریخ شمسی
-ops/                 deploy.sh، backup.sh، تایمر systemd، بلوک Caddy
+    pages/           home, patients, patient ledger, accounts, reports, cheques, settings
+    components/      sheets, transaction form, receipt, amount input, Jalali calendar …
+    lib/             API client, rial/toman formatting, Jalali dates, i18n
+    locales/         fa.json — every UI string
+ops/                 deploy.sh, backup.sh, systemd timer, Caddy site block
+scripts/             check-no-persian.sh
 ```

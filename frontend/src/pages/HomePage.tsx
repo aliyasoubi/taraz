@@ -10,10 +10,11 @@ import { faDigits } from '@/lib/format'
 import { daysBetween, formatJ, relativeDay, todayIso, weekdayName } from '@/lib/jalali'
 import { useDashboard } from '@/lib/queries'
 import { setPref, usePrefs } from '@/lib/settings'
+import { t } from '@/lib/i18n'
 
 function Greeting() {
   const h = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tehran' }).format(new Date()))
-  return <>{h < 12 ? 'صبح بخیر' : h < 17 ? 'روز بخیر' : 'عصر بخیر'}</>
+  return <>{t(h < 12 ? 'home.morning' : h < 17 ? 'home.day' : 'home.evening')}</>
 }
 
 export function HomePage() {
@@ -26,18 +27,18 @@ export function HomePage() {
       <header className="flex items-center justify-between px-5 pb-3 pt-safe">
         <div className="pt-3">
           <p className="text-[13px] text-ink-3">
-            {weekdayName(today)}، {formatJ(today)}
+            {t('home.dateLine', { weekday: weekdayName(today), date: formatJ(today) })}
           </p>
           <h1 className="text-2xl font-extrabold">
             <Greeting />
           </h1>
         </div>
         <div className="flex gap-2 pt-3">
-          <IconButton onClick={() => setPref('hideAmounts', !hideAmounts)} aria-label="نمایش/پنهان کردن مبالغ">
+          <IconButton onClick={() => setPref('hideAmounts', !hideAmounts)} aria-label={t('home.toggleAmounts')}>
             {hideAmounts ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
           </IconButton>
           <Link to="/settings">
-            <IconButton aria-label="تنظیمات">
+            <IconButton aria-label={t('home.settings')}>
               <Settings className="size-5" />
             </IconButton>
           </Link>
@@ -56,7 +57,7 @@ export function HomePage() {
           <div className="pointer-events-none absolute -bottom-24 -right-10 size-64 rounded-full bg-black/25 blur-3xl" />
           <div className="relative">
             <div className="flex items-center gap-2 text-sm text-white/80">
-              <Wallet className="size-4" /> کل طلب از بیماران
+              <Wallet className="size-4" /> {t('home.receivable')}
             </div>
             {isLoading || !data ? (
               <div className="mt-3 h-11 w-56 rounded-xl bg-white/20" />
@@ -64,10 +65,10 @@ export function HomePage() {
               <AnimatedMoney value={data.receivable} className="mt-2 font-black leading-tight tracking-tight" />
             )}
             <div className="mt-4 grid grid-cols-3 gap-2">
-              <HeroStat label="دریافتی امروز" value={data?.received_today} />
-              <HeroStat label={`دریافتی ${data?.month.label.split(' ')[0] ?? 'ماه'}`} value={data?.received_this_month} />
+              <HeroStat label={t('home.receivedToday')} value={data?.received_today} />
+              <HeroStat label={t('home.receivedInMonth', { month: data?.month.label.split(' ')[0] ?? t('common.month') })} value={data?.received_this_month} />
               <div className="rounded-2xl bg-white/15 p-2.5 backdrop-blur">
-                <p className="text-[10.5px] text-white/75">بدهکاران</p>
+                <p className="text-[10.5px] text-white/75">{t('home.debtors')}</p>
                 <p className="mt-0.5 text-lg font-extrabold">{data ? faDigits(data.debtors_count) : '—'}</p>
               </div>
             </div>
@@ -76,7 +77,7 @@ export function HomePage() {
 
         {data && data.credit > 0 && (
           <p className="mt-2 px-2 text-[12px] text-ink-3">
-            پیش‌پرداخت (بستانکاری) بیماران: <Money value={data.credit} tone="credit" className="font-semibold" />
+            {t('home.credit')} <Money value={data.credit} tone="credit" className="font-semibold" />
           </p>
         )}
 
@@ -93,11 +94,11 @@ export function HomePage() {
                 <CalendarClock className="size-5" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold">{faDigits(data.pending_cheques_count)} چک در جریان</p>
+                <p className="font-semibold">{t('home.pendingCheques', { n: faDigits(data.pending_cheques_count) })}</p>
                 <p className="text-xs text-ink-3">
                   {data.upcoming_cheques[0]?.cheque_due_on
-                    ? `نزدیک‌ترین سررسید: ${relativeDay(data.upcoming_cheques[0].cheque_due_on)}`
-                    : 'هنوز وصول نشده'}
+                    ? t('home.nearestDue', { when: relativeDay(data.upcoming_cheques[0].cheque_due_on) })
+                    : t('home.notClearedYet')}
                 </p>
               </div>
               <CompactMoney value={data.pending_cheques_total} className="text-sm font-bold text-warn" />
@@ -109,22 +110,22 @@ export function HomePage() {
         <SectionTitle
           action={
             <Link to="/reports" className="flex items-center gap-1 text-[13px] font-semibold text-brand">
-              گزارش ماهانه <ArrowUpLeft className="size-4" />
+              {t('home.monthlyReport')} <ArrowUpLeft className="size-4" />
             </Link>
           }
         >
-          روند دریافتی‌ها
+          {t('home.trend')}
         </SectionTitle>
         <Card className="p-4">{data ? <BarChart series={data.series} /> : <Skeleton className="h-44" />}</Card>
 
         <SectionTitle
           action={
             <Link to="/patients" className="text-[13px] font-semibold text-brand">
-              همه
+              {t('common.all')}
             </Link>
           }
         >
-          بیشترین بدهی
+          {t('home.topDebtors')}
         </SectionTitle>
         <Card className="p-2">
           {!data ? (
@@ -134,7 +135,7 @@ export function HomePage() {
               ))}
             </div>
           ) : data.top_debtors.length === 0 ? (
-            <Empty icon={<Users className="size-7" />} title="بدهکاری وجود ندارد" hint="همه حساب‌ها تسویه است" />
+            <Empty icon={<Users className="size-7" />} title={t('home.noDebtors')} hint={t('home.allSettled')} />
           ) : (
             <motion.div variants={listVariants} initial="hidden" animate="show">
               {data.top_debtors.map((d, i) => (
@@ -146,7 +147,7 @@ export function HomePage() {
                       <p className="truncate font-semibold">{d.name}</p>
                       {d.last_activity && (
                         <p className="text-[11px] text-ink-3">
-                          آخرین فعالیت {daysBetween(d.last_activity, today) > 30 ? formatJ(d.last_activity, 'short') : relativeDay(d.last_activity)}
+                          {t('home.lastActivity', { when: daysBetween(d.last_activity, today) > 30 ? formatJ(d.last_activity, 'short') : relativeDay(d.last_activity) })}
                         </p>
                       )}
                     </div>
@@ -158,7 +159,7 @@ export function HomePage() {
           )}
         </Card>
 
-        <SectionTitle>آخرین تراکنش‌ها</SectionTitle>
+        <SectionTitle>{t('home.recent')}</SectionTitle>
         <Card className="p-1.5">
           {!data ? (
             <div className="space-y-2 p-2">
@@ -169,8 +170,8 @@ export function HomePage() {
           ) : data.recent.length === 0 ? (
             <Empty
               icon={<TrendingUp className="size-7" />}
-              title="هنوز تراکنشی ثبت نشده"
-              hint="با دکمه + پایین صفحه اولین پرداخت یا هزینه را ثبت کنید"
+              title={t('common.noTransactionsYet')}
+              hint={t('home.emptyHint')}
             />
           ) : (
             <motion.div variants={listVariants} initial="hidden" animate="show">

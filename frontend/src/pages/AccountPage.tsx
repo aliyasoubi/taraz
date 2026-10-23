@@ -16,6 +16,7 @@ import { faDigits } from '@/lib/format'
 import { jToIso, monthLength } from '@/lib/jalali'
 import { ACCOUNT_KIND_LABEL } from '@/lib/labels'
 import { useAccount, useDeleteAccount, useSaveAccount, useTransactions } from '@/lib/queries'
+import { t } from '@/lib/i18n'
 
 export function AccountPage() {
   const id = Number(useParams().id)
@@ -29,8 +30,8 @@ export function AccountPage() {
   const save = useSaveAccount()
   const del = useDeleteAccount()
 
-  const received = (page?.items ?? []).filter((t) => t.type === 'payment' && t.counts).reduce((s, t) => s + t.amount, 0)
-  const pending = (page?.items ?? []).filter((t) => !t.counts && t.cheque_status === 'pending').reduce((s, t) => s + t.amount, 0)
+  const received = (page?.items ?? []).filter((tx) => tx.type === 'payment' && tx.counts).reduce((sum, tx) => sum + tx.amount, 0)
+  const pending = (page?.items ?? []).filter((tx) => !tx.counts && tx.cheque_status === 'pending').reduce((sum, tx) => sum + tx.amount, 0)
 
   return (
     <div>
@@ -39,7 +40,7 @@ export function AccountPage() {
         title={account?.title ?? '…'}
         subtitle={account ? ACCOUNT_KIND_LABEL[account.kind] : undefined}
         actions={
-          <IconButton onClick={() => setSheet('menu')} aria-label="گزینه‌ها">
+          <IconButton onClick={() => setSheet('menu')} aria-label={t('common.options')}>
             <Pencil className="size-[18px]" />
           </IconButton>
         }
@@ -55,8 +56,8 @@ export function AccountPage() {
 
         {account && (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Stat label="کل واریزی" value={<Money value={account.received_total} compact />} />
-            <Stat label="تعداد تراکنش" value={faDigits(account.tx_count)} />
+            <Stat label={t('account.totalReceived')} value={<Money value={account.received_total} compact />} />
+            <Stat label={t('account.txCount')} value={faDigits(account.tx_count)} />
           </div>
         )}
 
@@ -65,15 +66,15 @@ export function AccountPage() {
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Stat label="واریز در این ماه" value={<Money value={received} tone="credit" />} />
-          <Stat label="چک در راه" value={<Money value={pending} className={cx(pending > 0 && 'text-warn')} />} />
+          <Stat label={t('account.receivedInMonth')} value={<Money value={received} tone="credit" />} />
+          <Stat label={t('account.chequesInTransit')} value={<Money value={pending} className={cx(pending > 0 && 'text-warn')} />} />
         </div>
 
         <Card className={cx('mt-4 p-1.5 transition-opacity', isFetching && 'opacity-60')}>
           {!page ? (
             <Skeleton className="m-2 h-40" />
           ) : page.items.length === 0 ? (
-            <Empty icon={<Inbox className="size-7" />} title="در این ماه واریزی به این حساب ثبت نشده" />
+            <Empty icon={<Inbox className="size-7" />} title={t('account.emptyMonth')} />
           ) : (
             <motion.div key={from} variants={listVariants} initial="hidden" animate="show">
               {page.items.map((tx) => (
@@ -92,7 +93,7 @@ export function AccountPage() {
                 onClick={() => setSheet('edit')}
                 className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface-2/60 px-4 py-3.5 font-semibold"
               >
-                <Pencil className="size-5" /> ویرایش حساب
+                <Pencil className="size-5" /> {t('account.edit')}
               </Pressable>
               <Pressable
                 onClick={() =>
@@ -100,7 +101,7 @@ export function AccountPage() {
                     { id: account.id, data: { is_archived: !account.is_archived } },
                     {
                       onSuccess: () => {
-                        toast.success(account.is_archived ? 'حساب فعال شد' : 'حساب بایگانی شد')
+                        toast.success(account.is_archived ? t('account.activated') : t('account.archivedToast'))
                         setSheet(null)
                       },
                     },
@@ -109,13 +110,13 @@ export function AccountPage() {
                 className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface-2/60 px-4 py-3.5 font-semibold"
               >
                 {account.is_archived ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
-                {account.is_archived ? 'خروج از بایگانی' : 'بایگانی (در فرم پرداخت نمایش داده نشود)'}
+                {account.is_archived ? t('common.unarchive') : t('account.archive')}
               </Pressable>
               <Pressable
                 onClick={() => setSheet('delete')}
                 className="flex w-full items-center gap-3 rounded-2xl border border-line bg-surface-2/60 px-4 py-3.5 font-semibold text-debt"
               >
-                <Trash2 className="size-5" /> حذف حساب
+                <Trash2 className="size-5" /> {t('account.delete')}
               </Pressable>
             </div>
           </Sheet>
@@ -124,12 +125,12 @@ export function AccountPage() {
             open={sheet === 'delete'}
             onClose={() => setSheet(null)}
             loading={del.isPending}
-            title="حذف این حساب؟"
-            message="فقط حسابی که هیچ تراکنشی ندارد حذف می‌شود؛ در غیر این صورت آن را بایگانی کنید."
+            title={t('account.deleteTitle')}
+            message={t('account.deleteMessage')}
             onConfirm={() =>
               del.mutate(account.id, {
                 onSuccess: () => {
-                  toast.success('حساب حذف شد')
+                  toast.success(t('account.deleted'))
                   navigate('/accounts', { replace: true })
                 },
                 onError: (e) => {

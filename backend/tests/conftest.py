@@ -65,12 +65,12 @@ class Api:
     def __init__(self, client: TestClient) -> None:
         self.c = client
 
-    def patient(self, name: str = "بیمار آزمایشی") -> int:
+    def patient(self, name: str = "Test Patient") -> int:
         r = self.c.post("/api/patients", json={"name": name})
         assert r.status_code == 201, r.text
         return int(r.json()["id"])
 
-    def account(self, title: str = "ملت", **extra: object) -> int:
+    def account(self, title: str = "Mellat", **extra: object) -> int:
         r = self.c.post("/api/accounts", json={"title": title, **extra})
         assert r.status_code == 201, r.text
         return int(r.json()["id"])

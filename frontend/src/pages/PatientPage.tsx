@@ -17,6 +17,7 @@ import { TREATMENT_LABEL } from '@/lib/labels'
 import { useDeletePatient, usePatient, usePatientTransactions, useSavePatient } from '@/lib/queries'
 import type { Transaction, Treatment } from '@/lib/types'
 import { useLedgerUI } from '@/ledger-ui'
+import { t } from '@/lib/i18n'
 
 function effect(tx: Transaction): number {
   if (!tx.counts) return 0
@@ -34,9 +35,9 @@ export function PatientPage() {
   const savePatient = useSavePatient()
   const deletePatient = useDeletePatient()
 
-  // Running balance, like the «مانده حساب» column the spreadsheet kept by hand.
+  // Running balance, like the balance column the spreadsheet kept by hand.
   const groups = useMemo(() => {
-    const list = (txs ?? []).filter((t) => filter === 'all' || t.treatment_id === filter)
+    const list = (txs ?? []).filter((tx) => filter === 'all' || tx.treatment_id === filter)
     const chrono = [...list].sort((a, b) => a.occurred_on.localeCompare(b.occurred_on) || a.id - b.id)
     const running = new Map<number, number>()
     let acc = 0
@@ -63,7 +64,7 @@ export function PatientPage() {
   }
 
   const tone = balanceTone(p.balance)
-  const selected = filter === 'all' ? null : p.treatments.find((t) => t.id === filter)
+  const selected = filter === 'all' ? null : p.treatments.find((tr) => tr.id === filter)
   const view = selected ?? p
   const progress = view.charged > 0 ? Math.min(1, (view.paid + view.discounted) / view.charged) : 0
   const preset = { patientId: p.id, treatmentId: selected?.id }
@@ -74,7 +75,7 @@ export function PatientPage() {
         back
         title={p.name}
         actions={
-          <IconButton onClick={() => setSheet('menu')} aria-label="گزینه‌ها">
+          <IconButton onClick={() => setSheet('menu')} aria-label={t('common.options')}>
             <Pencil className="size-[18px]" />
           </IconButton>
         }
@@ -96,7 +97,7 @@ export function PatientPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <Badge tone={tone === 'settled' ? 'neutral' : tone}>{TONE_LABEL[tone]}</Badge>
-                {p.is_archived && <Badge>بایگانی</Badge>}
+                {p.is_archived && <Badge>{t('common.archived')}</Badge>}
               </div>
               {p.phone && (
                 <a href={`tel:${p.phone}`} className="mt-1 inline-flex items-center gap-1 text-[13px] text-ink-3" dir="ltr">
@@ -106,7 +107,7 @@ export function PatientPage() {
             </div>
           </div>
 
-          <p className="mt-5 text-[13px] text-ink-3">{selected ? `مانده ${selected.title}` : 'مانده حساب'}</p>
+          <p className="mt-5 text-[13px] text-ink-3">{selected ? t('patient.caseBalance', { title: selected.title }) : t('patient.balance')}</p>
           <AnimatedMoney
             value={Math.abs(view.balance)}
             maxSize={38}
@@ -117,7 +118,7 @@ export function PatientPage() {
           />
           {view.pending_cheques > 0 && (
             <p className="mt-1 text-[12px] text-warn">
-              <Money value={view.pending_cheques} className="font-semibold" /> چک در انتظار وصول — پس از وصول:{' '}
+              <Money value={view.pending_cheques} className="font-semibold" /> {t('patient.pendingAfter')}{' '}
               <Money value={view.balance - view.pending_cheques} tone="auto" className="font-semibold" />
             </p>
           )}
@@ -133,10 +134,10 @@ export function PatientPage() {
             </div>
             <div className="mt-2 flex justify-between text-[12px] text-ink-3">
               <span>
-                پرداخت‌شده <Money value={view.paid} className="font-semibold text-ink-2" unit={false} />
+                {t('patient.paid')} <Money value={view.paid} className="font-semibold text-ink-2" unit={false} />
               </span>
               <span>
-                کل هزینه <Money value={view.charged} className="font-semibold text-ink-2" unit={false} />
+                {t('patient.charged')} <Money value={view.charged} className="font-semibold text-ink-2" unit={false} />
               </span>
             </div>
           </div>
@@ -145,36 +146,36 @@ export function PatientPage() {
         <div className="mt-4 grid grid-cols-3 gap-2">
           <QuickAction
             icon={<Banknote className="size-5" />}
-            label="ثبت پرداخت"
+            label={t('patient.addPayment')}
             className="text-credit"
             onClick={() => newTransaction({ ...preset, type: 'payment' })}
           />
           <QuickAction
             icon={<Stethoscope className="size-5" />}
-            label="ثبت هزینه"
+            label={t('patient.addCharge')}
             className="text-debt"
             onClick={() => newTransaction({ ...preset, type: 'charge' })}
           />
           <QuickAction
             icon={<BadgePercent className="size-5" />}
-            label="تخفیف"
+            label={t('patient.addDiscount')}
             className="text-info"
             onClick={() => newTransaction({ ...preset, type: 'discount' })}
           />
         </div>
 
-        <SectionTitle>پرونده‌های درمان</SectionTitle>
+        <SectionTitle>{t('patient.cases')}</SectionTitle>
         <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-          <TreatmentTile active={filter === 'all'} title="همه" subtitle={`${faDigits(p.tx_count)} تراکنش`} balance={p.balance} onClick={() => setFilter('all')} />
-          {p.treatments.map((t) => (
+          <TreatmentTile active={filter === 'all'} title={t('common.all')} subtitle={t('common.txCount', { n: faDigits(p.tx_count) })} balance={p.balance} onClick={() => setFilter('all')} />
+          {p.treatments.map((tr) => (
             <TreatmentTile
-              key={t.id}
-              active={filter === t.id}
-              title={t.title}
-              subtitle={[TREATMENT_LABEL[t.kind], t.doctor].filter(Boolean).join(' · ')}
-              balance={t.balance}
-              done={t.status === 'completed'}
-              onClick={() => (filter === t.id ? setSheet({ treatment: t }) : setFilter(t.id))}
+              key={tr.id}
+              active={filter === tr.id}
+              title={tr.title}
+              subtitle={[TREATMENT_LABEL[tr.kind], tr.doctor].filter(Boolean).join(' · ')}
+              balance={tr.balance}
+              done={tr.status === 'completed'}
+              onClick={() => (filter === tr.id ? setSheet({ treatment: tr }) : setFilter(tr.id))}
             />
           ))}
           <Pressable
@@ -182,21 +183,21 @@ export function PatientPage() {
             className="grid w-28 shrink-0 place-items-center rounded-3xl border border-dashed border-line-2 py-3 text-ink-3"
           >
             <span className="flex flex-col items-center gap-1 text-xs font-semibold">
-              <FolderPlus className="size-5" /> پرونده جدید
+              <FolderPlus className="size-5" /> {t('common.newCase')}
             </span>
           </Pressable>
         </div>
-        {selected && <p className="mt-1 px-1 text-[11px] text-ink-3">برای ویرایش پرونده، دوباره روی آن بزنید.</p>}
+        {selected && <p className="mt-1 px-1 text-[11px] text-ink-3">{t('patient.tapToEdit')}</p>}
 
-        <SectionTitle>گردش حساب</SectionTitle>
+        <SectionTitle>{t('patient.ledger')}</SectionTitle>
         {!txs ? (
           <Skeleton className="h-48" />
         ) : groups.months.length === 0 ? (
           <Card>
             <Empty
               icon={<Banknote className="size-7" />}
-              title="هنوز تراکنشی ثبت نشده"
-              hint="هزینه درمان یا پرداخت بیمار را ثبت کنید تا مانده محاسبه شود"
+              title={t('common.noTransactionsYet')}
+              hint={t('patient.emptyHint')}
             />
           </Card>
         ) : (
@@ -209,7 +210,7 @@ export function PatientPage() {
                   <div className="flex items-center justify-between px-3 pb-1 pt-2.5">
                     <span className="text-[13px] font-bold text-ink-2">{monthLabel(jy!, jm!)}</span>
                     <span className="text-[12px] text-ink-3">
-                      تغییر مانده <Money value={net} sign tone="auto" unit={false} className="font-semibold" />
+                      {t('patient.monthChange')} <Money value={net} sign tone="auto" unit={false} className="font-semibold" />
                     </span>
                   </div>
                   <motion.div variants={listVariants} initial="hidden" animate="show">
@@ -226,16 +227,16 @@ export function PatientPage() {
 
       <Sheet open={sheet === 'menu'} onClose={() => setSheet(null)} title={p.name}>
         <div className="space-y-2">
-          <MenuItem icon={<Pencil className="size-5" />} label="ویرایش اطلاعات" onClick={() => setSheet('edit')} />
+          <MenuItem icon={<Pencil className="size-5" />} label={t('patient.editInfo')} onClick={() => setSheet('edit')} />
           <MenuItem
             icon={p.is_archived ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
-            label={p.is_archived ? 'خروج از بایگانی' : 'بایگانی (پنهان از فهرست)'}
+            label={p.is_archived ? t('common.unarchive') : t('patient.archive')}
             onClick={() =>
               savePatient.mutate(
                 { id: p.id, data: { is_archived: !p.is_archived } },
                 {
                   onSuccess: () => {
-                    toast.success(p.is_archived ? 'از بایگانی خارج شد' : 'بایگانی شد')
+                    toast.success(p.is_archived ? t('patient.unarchivedToast') : t('patient.archivedToast'))
                     setSheet(null)
                   },
                   onError: (e) => toast.error(errorMessage(e)),
@@ -243,7 +244,7 @@ export function PatientPage() {
               )
             }
           />
-          <MenuItem icon={<Trash2 className="size-5" />} label="حذف بیمار و همه تراکنش‌ها" danger onClick={() => setSheet('delete')} />
+          <MenuItem icon={<Trash2 className="size-5" />} label={t('patient.deleteMenu')} danger onClick={() => setSheet('delete')} />
         </div>
       </Sheet>
 
@@ -254,18 +255,18 @@ export function PatientPage() {
         patientId={p.id}
         treatment={typeof sheet === 'object' && sheet ? sheet.treatment : undefined}
         onClose={() => setSheet(null)}
-        onSaved={(t) => setFilter(t.id)}
+        onSaved={(tr) => setFilter(tr.id)}
       />
       <ConfirmSheet
         open={sheet === 'delete'}
         onClose={() => setSheet(null)}
         loading={deletePatient.isPending}
-        title={`حذف ${p.name}؟`}
-        message={`${faDigits(p.tx_count)} تراکنش این بیمار هم برای همیشه حذف می‌شود. اگر فقط می‌خواهید از فهرست پنهان شود، «بایگانی» را انتخاب کنید.`}
+        title={t('patient.deleteTitle', { name: p.name })}
+        message={t('patient.deleteMessage', { n: faDigits(p.tx_count) })}
         onConfirm={() =>
           deletePatient.mutate(p.id, {
             onSuccess: () => {
-              toast.success('بیمار حذف شد')
+              toast.success(t('patient.deleted'))
               navigate('/patients', { replace: true })
             },
             onError: (e) => toast.error(errorMessage(e)),
@@ -312,7 +313,7 @@ function TreatmentTile({
     >
       <div className="flex items-center gap-1.5">
         <p className="truncate text-[14px] font-bold">{title}</p>
-        {done && <Badge tone="credit">پایان</Badge>}
+        {done && <Badge tone="credit">{t('treatmentForm.completedBadge')}</Badge>}
       </div>
       <p className="mt-0.5 truncate text-[11px] text-ink-3">{subtitle || ' '}</p>
       <Money value={balance} tone="auto" compact className="mt-2 block text-[13px] font-bold" />

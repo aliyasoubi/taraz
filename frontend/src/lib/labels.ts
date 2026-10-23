@@ -1,70 +1,14 @@
+import { messages } from './i18n'
 import type { AccountKind, ChequeStatus, PaymentMethod, TreatmentKind, TxType } from './types'
 
-export const TX_LABEL: Record<TxType, string> = {
-  charge: 'هزینه درمان',
-  payment: 'پرداخت',
-  discount: 'تخفیف',
-  refund: 'استرداد',
-}
-
-export const METHOD_LABEL: Record<PaymentMethod, string> = {
-  card: 'کارت به کارت',
-  transfer: 'انتقال بانکی',
-  pos: 'کارتخوان',
-  cash: 'نقد',
-  cheque: 'چک',
-  currency: 'ارز',
-  other: 'سایر',
-}
-
-export const CHEQUE_LABEL: Record<ChequeStatus, string> = {
-  pending: 'در انتظار وصول',
-  cleared: 'وصول شد',
-  bounced: 'برگشتی',
-}
-
-export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = {
-  own: 'حساب خودم',
-  staff: 'همکار / منشی',
-  third_party: 'شخص ثالث',
-  pos: 'کارتخوان',
-  cash: 'صندوق نقدی',
-  other: 'سایر',
-}
-
-export const TREATMENT_LABEL: Record<TreatmentKind, string> = {
-  general: 'عمومی',
-  implant: 'ایمپلنت',
-  ortho: 'ارتودنسی',
-  laminate: 'لمینت',
-  composite: 'کامپوزیت',
-  endo: 'عصب‌کشی',
-  surgery: 'جراحی',
-  prosthesis: 'پروتز',
-  cosmetic: 'زیبایی',
-  other: 'سایر',
-}
-
-export const BANKS = [
-  'ملت',
-  'ملی',
-  'تجارت',
-  'صادرات',
-  'سپه',
-  'کارآفرین',
-  'بلو',
-  'پاسارگاد',
-  'پارسیان',
-  'رسالت',
-  'ایران‌زمین',
-  'سامان',
-  'آینده',
-  'اقتصاد نوین',
-  'ویپاد',
-  'مسکن',
-  'رفاه',
-  'شهر',
-]
+export const TX_LABEL: Record<TxType, string> = messages.tx
+export const TX_SHORT_LABEL: Record<TxType, string> = messages.txShort
+export const METHOD_LABEL: Record<PaymentMethod, string> = messages.method
+export const CHEQUE_LABEL: Record<ChequeStatus, string> = messages.cheque
+export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = messages.accountKind
+export const TREATMENT_LABEL: Record<TreatmentKind, string> = messages.treatment
+export const BANKS: string[] = messages.banks
+export const QUICK_NOTES: Record<TxType, string[]> = messages.quickNotes
 
 /** Card gradients. Keys are stored on the account (`color`). */
 export const ACCOUNT_COLORS: Record<string, [string, string]> = {

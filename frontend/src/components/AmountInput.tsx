@@ -1,14 +1,15 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Delete } from 'lucide-react'
-import { digitsOnly, formatNumber, fromUnit, toUnit, toWords, UNIT_LABEL } from '@/lib/format'
+import { digitsOnly, faDigits, formatNumber, fromUnit, toUnit, toWords, UNIT_LABEL } from '@/lib/format'
 import { usePrefs } from '@/lib/settings'
 import { cx, Pressable } from './ui'
+import { t } from '@/lib/i18n'
 
 const MAX_DIGITS = 14
 
 /**
  * The amount, typed in the user's unit and stored in rials.
- * Big type, live grouping, the number spelled out underneath, and a «۰۰۰» key —
+ * Big type, live grouping, the number spelled out underneath, and a "000" key —
  * rial amounts are long and a dropped zero is the most expensive typo there is.
  */
 export function AmountInput({
@@ -25,7 +26,7 @@ export function AmountInput({
   const { unit } = usePrefs()
   const shown = value ? toUnit(value, unit) : 0
   const display = shown ? formatNumber(shown) : ''
-  const words = shown ? `${toWords(shown)} ${UNIT_LABEL[unit]}` : ''
+  const words = shown ? t('amount.words', { words: toWords(shown), unit: UNIT_LABEL[unit] }) : ''
 
   const set = (digits: string) => {
     const clean = digits.replace(/^0+/, '').slice(0, MAX_DIGITS)
@@ -43,8 +44,8 @@ export function AmountInput({
           inputMode="numeric"
           enterKeyHint="done"
           autoComplete="off"
-          aria-label="مبلغ"
-          placeholder="۰"
+          aria-label={t('amount.label')}
+          placeholder={faDigits(0)}
           autoFocus={autoFocus}
           value={display}
           onChange={(e) => set(digitsOnly(e.target.value))}
@@ -63,7 +64,7 @@ export function AmountInput({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
           >
-            {words || `مبلغ به ${UNIT_LABEL[unit]}`}
+            {words || t('amount.hint', { unit: UNIT_LABEL[unit] })}
           </motion.span>
         </AnimatePresence>
       </div>
@@ -72,7 +73,7 @@ export function AmountInput({
           onClick={() => raw && set(raw + '000')}
           className="h-9 rounded-full border border-line bg-surface px-4 text-sm font-bold text-ink-2"
         >
-          ۰۰۰
+          {faDigits('000')}
         </Pressable>
         {[1_000_000, 10_000_000].map((step) => (
           <Pressable
@@ -80,12 +81,12 @@ export function AmountInput({
             onClick={() => set(String(Math.floor(shown) + step))}
             className="h-9 rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2"
           >
-            +{step >= 1e6 ? `${formatNumber(step / 1e6)} میلیون` : formatNumber(step)}
+            {t('amount.plusMillions', { n: formatNumber(step / 1e6) })}
           </Pressable>
         ))}
         <Pressable
           onClick={() => set(raw.slice(0, -1))}
-          aria-label="پاک کردن رقم آخر"
+          aria-label={t('amount.backspace')}
           className="grid size-9 place-items-center rounded-full border border-line bg-surface text-ink-3"
         >
           <Delete className="size-4 -scale-x-100" />

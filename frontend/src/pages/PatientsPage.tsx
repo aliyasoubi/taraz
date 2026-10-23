@@ -7,21 +7,22 @@ import { PatientFormSheet } from '@/components/forms'
 import { Money } from '@/components/Money'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge, Chip, Empty, IconButton, itemVariants, listVariants, Skeleton, TextInput } from '@/components/ui'
-import { faDigits } from '@/lib/format'
+import { balanceTone, faDigits, TONE_LABEL } from '@/lib/format'
 import { relativeDay } from '@/lib/jalali'
 import { usePatients, type PatientListParams } from '@/lib/queries'
+import { t } from '@/lib/i18n'
 
 const FILTERS: { value: NonNullable<PatientListParams['status']>; label: string }[] = [
-  { value: 'all', label: 'همه' },
-  { value: 'debtor', label: 'بدهکار' },
-  { value: 'creditor', label: 'بستانکار' },
-  { value: 'settled', label: 'تسویه' },
-  { value: 'archived', label: 'بایگانی' },
+  { value: 'all', label: t('common.all') },
+  { value: 'debtor', label: t('tone.debt') },
+  { value: 'creditor', label: t('tone.credit') },
+  { value: 'settled', label: t('tone.settled') },
+  { value: 'archived', label: t('common.archived') },
 ]
 const SORTS: { value: NonNullable<PatientListParams['sort']>; label: string }[] = [
-  { value: 'balance', label: 'بیشترین بدهی' },
-  { value: 'recent', label: 'آخرین فعالیت' },
-  { value: 'name', label: 'الفبا' },
+  { value: 'balance', label: t('patients.sortBalance') },
+  { value: 'recent', label: t('patients.sortRecent') },
+  { value: 'name', label: t('patients.sortName') },
 ]
 
 export function PatientsPage() {
@@ -38,10 +39,10 @@ export function PatientsPage() {
   return (
     <div>
       <PageHeader
-        title="بیماران"
-        subtitle={data ? `${faDigits(data.length)} بیمار` : undefined}
+        title={t('patients.title')}
+        subtitle={data ? t('common.patientsCount', { n: faDigits(data.length) }) : undefined}
         actions={
-          <IconButton onClick={() => setAdding(true)} aria-label="بیمار جدید" className="text-brand">
+          <IconButton onClick={() => setAdding(true)} aria-label={t('common.newPatient')} className="text-brand">
             <UserPlus className="size-5" />
           </IconButton>
         }
@@ -53,7 +54,7 @@ export function PatientsPage() {
           <TextInput
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="جستجوی نام…"
+            placeholder={t('patients.search')}
             className="ps-12 pe-10"
             type="search"
             enterKeyHint="search"
@@ -63,7 +64,7 @@ export function PatientsPage() {
               type="button"
               onClick={() => setQ('')}
               className="absolute end-3 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-surface text-ink-3"
-              aria-label="پاک کردن"
+              aria-label={t('common.clear')}
             >
               <X className="size-4" />
             </button>
@@ -88,7 +89,7 @@ export function PatientsPage() {
       <div className="px-4">
         {status === 'debtor' && data && data.length > 0 && (
           <div className="mb-3 flex items-center justify-between rounded-2xl border border-debt/20 bg-debt/8 px-4 py-3 text-sm">
-            <span className="text-ink-2">جمع بدهی این فهرست</span>
+            <span className="text-ink-2">{t('patients.debtTotal')}</span>
             <Money value={total} tone="debt" className="font-bold" />
           </div>
         )}
@@ -102,8 +103,8 @@ export function PatientsPage() {
         ) : !data?.length ? (
           <Empty
             icon={<Users className="size-7" />}
-            title={q ? 'بیماری با این نام پیدا نشد' : 'فهرست خالی است'}
-            hint={q ? 'املای دیگری را امتحان کنید' : 'بیمار جدید را از دکمه بالای صفحه اضافه کنید'}
+            title={q ? t('patients.notFound') : t('patients.empty')}
+            hint={q ? t('patients.notFoundHint') : t('patients.emptyHint')}
           />
         ) : (
           <motion.ul variants={listVariants} initial="hidden" animate="show" className="space-y-2">
@@ -118,14 +119,14 @@ export function PatientsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{p.name}</p>
                       <div className="mt-0.5 flex items-center gap-2 text-[12px] text-ink-3">
-                        {p.last_activity ? <span>{relativeDay(p.last_activity)}</span> : <span>بدون تراکنش</span>}
-                        {p.pending_cheques > 0 && <Badge tone="warn">چک در جریان</Badge>}
+                        {p.last_activity ? <span>{relativeDay(p.last_activity)}</span> : <span>{t('common.noTransactions')}</span>}
+                        {p.pending_cheques > 0 && <Badge tone="warn">{t('common.pendingCheque')}</Badge>}
                       </div>
                     </div>
                     <div className="text-end">
                       <Money value={p.balance} tone="auto" className="text-[15px] font-bold" unit={false} />
                       <p className="text-[11px] text-ink-3">
-                        {p.balance > 0 ? 'بدهکار' : p.balance < 0 ? 'بستانکار' : 'تسویه'}
+                        {TONE_LABEL[balanceTone(p.balance)]}
                       </p>
                     </div>
                   </Link>

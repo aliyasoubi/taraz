@@ -8,6 +8,7 @@ import { Money } from '@/components/Money'
 import { PageHeader } from '@/components/PageHeader'
 import { Button, Empty, IconButton, Skeleton } from '@/components/ui'
 import { useAccounts } from '@/lib/queries'
+import { t } from '@/lib/i18n'
 
 export function AccountsPage() {
   const { data, isLoading } = useAccounts()
@@ -19,10 +20,10 @@ export function AccountsPage() {
   return (
     <div>
       <PageHeader
-        title="حساب‌های مقصد"
-        subtitle="هر پرداخت به کدام حساب رفته است"
+        title={t('accounts.title')}
+        subtitle={t('accounts.subtitle')}
         actions={
-          <IconButton onClick={() => setAdding(true)} aria-label="حساب جدید" className="text-brand">
+          <IconButton onClick={() => setAdding(true)} aria-label={t('common.newAccount')} className="text-brand">
             <Plus className="size-5" />
           </IconButton>
         }
@@ -30,7 +31,7 @@ export function AccountsPage() {
       <div className="px-4">
         {data && active.length > 0 && (
           <div className="mb-4 flex items-center justify-between rounded-3xl border border-line bg-surface/70 px-4 py-3">
-            <span className="text-sm text-ink-2">جمع واریزی این ماه</span>
+            <span className="text-sm text-ink-2">{t('accounts.monthTotal')}</span>
             <Money value={monthTotal} tone="credit" className="text-lg font-extrabold" />
           </div>
         )}
@@ -43,9 +44,9 @@ export function AccountsPage() {
         ) : active.length === 0 ? (
           <Empty
             icon={<CreditCard className="size-7" />}
-            title="هنوز حسابی تعریف نشده"
-            hint="کارت‌ها، کارتخوان، صندوق یا حساب اشخاص ثالث (مثل آقای قمی) را اضافه کنید تا مقصد هر پرداخت مشخص باشد"
-            action={<Button onClick={() => setAdding(true)}>افزودن اولین حساب</Button>}
+            title={t('accounts.empty')}
+            hint={t('accounts.emptyHint')}
+            action={<Button onClick={() => setAdding(true)}>{t('accounts.addFirst')}</Button>}
           />
         ) : (
           <div className="space-y-4">
@@ -68,7 +69,7 @@ export function AccountsPage() {
 
         {archived.length > 0 && (
           <div className="mt-8">
-            <p className="mb-2 px-1 text-[13px] font-bold text-ink-3">بایگانی</p>
+            <p className="mb-2 px-1 text-[13px] font-bold text-ink-3">{t('common.archived')}</p>
             <div className="space-y-2">
               {archived.map((a) => (
                 <Link

@@ -68,9 +68,9 @@ def _session_valid(token: str, settings: Settings) -> bool:
 def require_user(request: Request, settings: SettingsDep) -> None:
     token = request.cookies.get(COOKIE_NAME)
     if not token or not _session_valid(token, settings):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "نیاز به ورود")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "login_required")
     if request.method not in ("GET", "HEAD", "OPTIONS") and CSRF_HEADER not in request.headers:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "درخواست نامعتبر")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "forbidden")
 
 
 class LoginThrottle:

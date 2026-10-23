@@ -1,3 +1,5 @@
+import { t, tMaybe } from './i18n'
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -9,13 +11,14 @@ export class ApiError extends Error {
 
 type Json = Record<string, unknown> | unknown[]
 
+/** The API sends error codes (`patient_not_found`); the message comes from the locale file. */
 function detailOf(body: unknown): string | null {
   if (!body || typeof body !== 'object' || !('detail' in body)) return null
   const detail = (body as { detail: unknown }).detail
-  if (typeof detail === 'string') return detail
+  if (typeof detail === 'string') return tMaybe(`errors.${detail}`)
   // FastAPI validation errors: [{loc, msg}, …]
   if (Array.isArray(detail) && detail[0] && typeof detail[0] === 'object' && 'msg' in detail[0]) {
-    return 'اطلاعات واردشده معتبر نیست'
+    return t('errors.invalid')
   }
   return null
 }
@@ -35,7 +38,7 @@ async function request<T>(method: string, path: string, body?: Json): Promise<T>
   if (res.status === 204) return undefined as T
   const data: unknown = await res.json().catch(() => null)
   if (!res.ok) {
-    throw new ApiError(res.status, detailOf(data) ?? (res.status >= 500 ? 'خطای سرور' : 'خطا در درخواست'))
+    throw new ApiError(res.status, detailOf(data) ?? t(res.status >= 500 ? 'errors.server' : 'errors.request'))
   }
   return data as T
 }

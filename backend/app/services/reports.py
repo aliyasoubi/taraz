@@ -3,7 +3,8 @@ from datetime import date, timedelta
 from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import Account, ChequeStatus, Patient, PaymentMethod, Transaction, TxType
+from app.i18n import t
+from app.models import Account, ChequeStatus, Patient, Transaction, TxType
 from app.schemas import (
     BreakdownRow,
     Dashboard,
@@ -18,16 +19,6 @@ from app.services.jalali import JMonth, today
 from app.services.transactions import to_out, tx_select
 
 T = Transaction
-
-METHOD_LABELS = {
-    PaymentMethod.CARD: "کارت به کارت",
-    PaymentMethod.TRANSFER: "انتقال بانکی",
-    PaymentMethod.POS: "کارتخوان",
-    PaymentMethod.CASH: "نقد",
-    PaymentMethod.CHEQUE: "چک",
-    PaymentMethod.CURRENCY: "ارز",
-    PaymentMethod.OTHER: "سایر",
-}
 
 
 def month_ref(m: JMonth) -> MonthRef:
@@ -202,7 +193,7 @@ def monthly(db: Session, month: JMonth) -> MonthlyReport:
         by_account=[
             BreakdownRow(
                 key=str(acc_id or 0),
-                label=title or "حساب نامشخص",
+                label=title or t("common.unknownAccount"),
                 amount=int(amount),
                 count=int(count),
                 color=color,
@@ -212,7 +203,7 @@ def monthly(db: Session, month: JMonth) -> MonthlyReport:
         by_method=[
             BreakdownRow(
                 key=method.value if method else "unknown",
-                label=METHOD_LABELS.get(method, "نامشخص") if method else "نامشخص",
+                label=t(f"method.{method.value}") if method else t("common.unknown"),
                 amount=int(amount),
                 count=int(count),
             )

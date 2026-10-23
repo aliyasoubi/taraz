@@ -1,23 +1,12 @@
 import { jalaaliMonthLength, toGregorian, toJalaali } from 'jalaali-js'
 import { faDigits } from './format'
+import { messages, t } from './i18n'
 
-export const MONTHS = [
-  'فروردین',
-  'اردیبهشت',
-  'خرداد',
-  'تیر',
-  'مرداد',
-  'شهریور',
-  'مهر',
-  'آبان',
-  'آذر',
-  'دی',
-  'بهمن',
-  'اسفند',
-]
+export const MONTHS = messages.calendar.months
 // Saturday-first, as on an Iranian calendar.
-export const WEEKDAYS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
-const WEEKDAY_NAMES = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه']
+export const WEEKDAYS = messages.calendar.weekdaysShort
+const WEEKDAY_NAMES = messages.calendar.weekdays
+export const FRIDAY = 6
 
 export interface JDate {
   jy: number
@@ -89,14 +78,14 @@ export function weekdayName(iso: string): string {
   return WEEKDAY_NAMES[weekdayIndex(iso)]!
 }
 
-/** «امروز», «دیروز», «۳ روز دیگر» … falling back to the date. */
+/** "today", "yesterday", "in 3 days" … falling back to the date. */
 export function relativeDay(iso: string): string {
   const diff = daysBetween(todayIso(), iso)
-  if (diff === 0) return 'امروز'
-  if (diff === -1) return 'دیروز'
-  if (diff === 1) return 'فردا'
-  if (diff < 0 && diff > -7) return `${faDigits(-diff)} روز پیش`
-  if (diff > 0 && diff < 7) return `${faDigits(diff)} روز دیگر`
+  if (diff === 0) return t('calendar.today')
+  if (diff === -1) return t('calendar.yesterday')
+  if (diff === 1) return t('calendar.tomorrow')
+  if (diff < 0 && diff > -7) return t('calendar.daysAgo', { n: faDigits(-diff) })
+  if (diff > 0 && diff < 7) return t('calendar.daysAhead', { n: faDigits(diff) })
   return formatJ(iso, 'short')
 }
 

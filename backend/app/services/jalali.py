@@ -5,21 +5,7 @@ from zoneinfo import ZoneInfo
 import jdatetime
 
 from app.config import get_settings
-
-MONTH_NAMES = (
-    "فروردین",
-    "اردیبهشت",
-    "خرداد",
-    "تیر",
-    "مرداد",
-    "شهریور",
-    "مهر",
-    "آبان",
-    "آذر",
-    "دی",
-    "بهمن",
-    "اسفند",
-)
+from app.i18n import t
 
 
 @dataclass(frozen=True)
@@ -37,7 +23,7 @@ class JMonth:
 
     @property
     def label(self) -> str:
-        return f"{MONTH_NAMES[self.month - 1]} {self.year}"
+        return f"{t('months')[self.month - 1]} {self.year}"
 
     def next(self) -> "JMonth":
         return JMonth(self.year + 1, 1) if self.month == 12 else JMonth(self.year, self.month + 1)

@@ -14,6 +14,7 @@ import { formatJ } from '@/lib/jalali'
 import { accountAccent } from '@/lib/labels'
 import { useMonthlyReport } from '@/lib/queries'
 import type { BreakdownRow, StatementRow } from '@/lib/types'
+import { t } from '@/lib/i18n'
 
 export function ReportsPage() {
   const [month, shift, dir] = useMonthState()
@@ -23,7 +24,7 @@ export function ReportsPage() {
 
   return (
     <div>
-      <PageHeader title="گزارش ماهانه" subtitle="مانده هر بیمار در پایان ماه" />
+      <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} />
       <div className="space-y-4 px-4">
         <MonthSwitcher value={month} onShift={shift} dir={dir} />
 
@@ -32,7 +33,9 @@ export function ReportsPage() {
         >
           <div className="pointer-events-none absolute -left-20 -top-20 size-56 rounded-full bg-debt/20 blur-3xl" />
           <p className="relative text-[13px] text-ink-3">
-            طلب در پایان {data ? `${data.month.label.split(' ')[0]} (${formatJ(data.month.end, 'short')})` : 'ماه'}
+            {data
+              ? t('reports.receivableAt', { month: data.month.label.split(' ')[0] ?? '', date: formatJ(data.month.end, 'short') })
+              : t('reports.receivableAtMonth')}
           </p>
           {data ? (
             <AnimatedMoney value={data.closing_receivable} maxSize={36} className="relative font-black tracking-tight text-debt" />
@@ -40,25 +43,25 @@ export function ReportsPage() {
             <Skeleton className="mt-2 h-10 w-48" />
           )}
           <p className="relative mt-1 text-[12px] text-ink-3">
-            {data ? `${faDigits(data.debtors_count)} بیمار بدهکار` : ''}
+            {data ? t('reports.debtorsCount', { n: faDigits(data.debtors_count) }) : ''}
             {data && data.closing_credit > 0 && (
               <>
-                {' · '}پیش‌پرداخت <Money value={data.closing_credit} tone="credit" compact />
+                {' · '}{t('reports.prepaid')} <Money value={data.closing_credit} tone="credit" compact />
               </>
             )}
           </p>
 
           <div className="relative mt-5 grid grid-cols-2 gap-2">
-            <Kpi label="مانده ابتدای ماه" value={data?.opening_receivable} />
-            <Kpi label="هزینه‌های ماه" value={data?.charged} tone="text-debt" />
-            <Kpi label="دریافتی ماه" value={data?.paid} tone="text-credit" />
-            <Kpi label="تخفیف / استرداد" value={data ? data.discounted + data.refunded : undefined} tone="text-info" />
+            <Kpi label={t('reports.opening')} value={data?.opening_receivable} />
+            <Kpi label={t('reports.charged')} value={data?.charged} tone="text-debt" />
+            <Kpi label={t('reports.paid')} value={data?.paid} tone="text-credit" />
+            <Kpi label={t('reports.discountsRefunds')} value={data ? data.discounted + data.refunded : undefined} tone="text-info" />
           </div>
         </motion.div>
 
         {data && data.by_account.length > 0 && (
           <>
-            <SectionTitle>دریافتی به تفکیک حساب مقصد</SectionTitle>
+            <SectionTitle>{t('reports.byAccount')}</SectionTitle>
             <Card className="p-4">
               <Breakdown rows={data.by_account} total={data.paid} />
             </Card>
@@ -66,7 +69,7 @@ export function ReportsPage() {
         )}
         {data && data.by_method.length > 0 && (
           <>
-            <SectionTitle>روش پرداخت</SectionTitle>
+            <SectionTitle>{t('reports.byMethod')}</SectionTitle>
             <Card className="p-4">
               <Breakdown rows={data.by_method} total={data.paid} />
             </Card>
@@ -80,19 +83,19 @@ export function ReportsPage() {
               onChange={setView}
               className="w-44"
               options={[
-                { value: 'debtors', label: 'بدهکاران' },
-                { value: 'all', label: 'همه' },
+                { value: 'debtors', label: t('reports.debtors') },
+                { value: 'all', label: t('common.all') },
               ]}
             />
           }
         >
-          صورت‌حساب بیماران
+          {t('reports.statement')}
         </SectionTitle>
         {!data ? (
           <Skeleton className="h-60" />
         ) : rows.length === 0 ? (
           <Card>
-            <Empty icon={<Users className="size-7" />} title="موردی برای این ماه نیست" />
+            <Empty icon={<Users className="size-7" />} title={t('reports.emptyMonth')} />
           </Card>
         ) : (
           <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-2" key={`${month.jy}-${month.jm}-${view}`}>
@@ -104,7 +107,7 @@ export function ReportsPage() {
 
         {data && data.cheques_due.length > 0 && (
           <>
-            <SectionTitle>چک‌های سررسید این ماه</SectionTitle>
+            <SectionTitle>{t('reports.chequesDue')}</SectionTitle>
             <Card className="p-1.5">
               <motion.div variants={listVariants} initial="hidden" animate="show">
                 {data.cheques_due.map((tx) => (
@@ -120,7 +123,7 @@ export function ReportsPage() {
           className="mt-4 w-full"
           onClick={() => download(`/reports/monthly.xlsx${qs({ year: month.jy, month: month.jm })}`)}
         >
-          <FileSpreadsheet className="size-5 text-credit" /> دریافت فایل اکسل این ماه
+          <FileSpreadsheet className="size-5 text-credit" /> {t('reports.download')}
           <Download className="size-4 text-ink-3" />
         </Button>
       </div>
@@ -152,7 +155,7 @@ function Breakdown({ rows, total }: { rows: BreakdownRow[]; total: number }) {
               <span className="flex items-center gap-2 font-semibold">
                 <span className="size-2.5 rounded-full" style={{ background: r.color ? accountAccent(r.color) : 'var(--ink-3)' }} />
                 {r.label}
-                <span className="text-[11px] font-normal text-ink-3">{faDigits(r.count)} مورد</span>
+                <span className="text-[11px] font-normal text-ink-3">{t('common.itemsCount', { n: faDigits(r.count) })}</span>
               </span>
               <Money value={r.amount} compact className="font-bold" />
             </div>
@@ -181,12 +184,12 @@ function StatementCard({ row }: { row: StatementRow }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{row.name}</p>
           <p className="text-[11px] text-ink-3">
-            ابتدای ماه <Money value={row.opening} unit={false} />
+            {t('common.openingOfMonth')} <Money value={row.opening} unit={false} />
           </p>
         </div>
         <div className="text-end">
           <Money value={row.closing} tone="auto" className="font-bold" unit={false} />
-          <p className="text-[10px] text-ink-3">پایان ماه</p>
+          <p className="text-[10px] text-ink-3">{t('common.endOfMonth')}</p>
         </div>
         <ChevronDown className={cx('size-4 text-ink-3 transition-transform', open && 'rotate-180')} />
       </button>
@@ -199,13 +202,13 @@ function StatementCard({ row }: { row: StatementRow }) {
             className="overflow-hidden"
           >
             <div className="grid grid-cols-2 gap-2 border-t border-line p-3 text-[13px]">
-              <Line label="هزینه" value={row.charged} tone="text-debt" />
-              <Line label="پرداخت" value={row.paid} tone="text-credit" />
-              <Line label="تخفیف" value={row.discounted} />
-              <Line label="استرداد" value={row.refunded} />
-              {row.pending_cheques > 0 && <Line label="چک در جریان" value={row.pending_cheques} tone="text-warn" />}
+              <Line label={t('reports.charge')} value={row.charged} tone="text-debt" />
+              <Line label={t('reports.payment')} value={row.paid} tone="text-credit" />
+              <Line label={t('reports.discount')} value={row.discounted} />
+              <Line label={t('reports.refund')} value={row.refunded} />
+              {row.pending_cheques > 0 && <Line label={t('common.pendingCheque')} value={row.pending_cheques} tone="text-warn" />}
               <Link to={`/patients/${row.id}`} className="col-span-2 mt-1 rounded-xl bg-surface-2 py-2 text-center font-semibold text-brand">
-                مشاهده گردش حساب
+                {t('common.viewLedger')}
               </Link>
             </div>
           </motion.div>

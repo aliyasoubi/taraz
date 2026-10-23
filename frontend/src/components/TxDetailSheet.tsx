@@ -17,6 +17,7 @@ import { Money } from './Money'
 import { Sheet } from './Sheet'
 import { txVisual } from './TxRow'
 import { Badge, Button, cx, Pressable } from './ui'
+import { t } from '@/lib/i18n'
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -37,7 +38,7 @@ function TransferFlow({ tx }: { tx: Transaction }) {
       <div className="flex w-24 shrink-0 flex-col items-center text-center">
         <Avatar name={payer} size={48} />
         <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-5">{payer}</p>
-        <p className="text-[11px] text-ink-3">{tx.payer_name ? 'پرداخت‌کننده' : 'خود بیمار'}</p>
+        <p className="text-[11px] text-ink-3">{tx.payer_name ? t('txDetail.payer') : t('common.self')}</p>
       </div>
       <div className="relative h-8 flex-1">
         <div className="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-line-2" />
@@ -53,10 +54,10 @@ function TransferFlow({ tx }: { tx: Transaction }) {
           <AccountCard account={account} size="sm" />
         ) : (
           <div className="grid h-[92px] w-[150px] place-items-center rounded-2xl border border-dashed border-line-2 text-xs text-ink-3">
-            حساب مشخص نشده
+            {t('txDetail.noAccount')}
           </div>
         )}
-        <p className="mt-2 text-[11px] text-ink-3">مقصد</p>
+        <p className="mt-2 text-[11px] text-ink-3">{t('txDetail.destination')}</p>
       </div>
     </div>
   )
@@ -64,19 +65,19 @@ function TransferFlow({ tx }: { tx: Transaction }) {
 
 function receiptText(tx: Transaction, unit: 'rial' | 'toman'): string {
   const lines = [
-    `رسید ${TX_LABEL[tx.type]}`,
-    `بیمار: ${tx.patient_name}`,
-    `مبلغ: ${formatMoney(tx.amount, unit)} ${UNIT_LABEL[unit]}`,
+    t('receipt.title', { type: TX_LABEL[tx.type] }),
+    t('receipt.patient', { v: tx.patient_name }),
+    t('receipt.amount', { v: `${formatMoney(tx.amount, unit)} ${UNIT_LABEL[unit]}` }),
   ]
   if (tx.type === 'payment') {
-    lines.push(`پرداخت‌کننده: ${tx.payer_name ?? tx.patient_name}`)
-    if (tx.account_title) lines.push(`واریز به: ${tx.account_title}${tx.account_bank ? ` (${tx.account_bank})` : ''}`)
+    lines.push(t('receipt.payer', { v: tx.payer_name ?? tx.patient_name }))
+    if (tx.account_title) lines.push(t('receipt.paidTo', { v: `${tx.account_title}${tx.account_bank ? ` (${tx.account_bank})` : ''}` }))
   }
-  if (tx.method) lines.push(`روش: ${METHOD_LABEL[tx.method]}`)
-  lines.push(`تاریخ: ${formatJ(tx.occurred_on)}`)
-  if (tx.cheque_due_on) lines.push(`سررسید چک: ${formatJ(tx.cheque_due_on)}`)
-  if (tx.reference) lines.push(`پیگیری: ${faDigits(tx.reference)}`)
-  if (tx.description) lines.push(`توضیحات: ${tx.description}`)
+  if (tx.method) lines.push(t('receipt.method', { v: METHOD_LABEL[tx.method] }))
+  lines.push(t('receipt.date', { v: formatJ(tx.occurred_on) }))
+  if (tx.cheque_due_on) lines.push(t('receipt.chequeDue', { v: formatJ(tx.cheque_due_on) }))
+  if (tx.reference) lines.push(t('receipt.reference', { v: faDigits(tx.reference) }))
+  if (tx.description) lines.push(t('receipt.description', { v: tx.description }))
   return lines.join('\n')
 }
 
@@ -115,7 +116,7 @@ export function TxDetailSheet({
       {
         onSuccess: (fresh) => {
           setUpdated(fresh)
-          toast.success(status === 'cleared' ? 'چک وصول شد و از بدهی کم شد' : CHEQUE_LABEL[status])
+          toast.success(status === 'cleared' ? t('txDetail.chequeCleared') : CHEQUE_LABEL[status])
         },
         onError: (e) => toast.error(errorMessage(e)),
       },
@@ -124,9 +125,9 @@ export function TxDetailSheet({
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(receiptText(tx, unit))
-      toast.success('رسید کپی شد')
+      toast.success(t('txDetail.copied'))
     } catch {
-      toast.error('کپی ممکن نشد')
+      toast.error(t('txDetail.copyFailed'))
     }
   }
 
@@ -169,7 +170,7 @@ export function TxDetailSheet({
             </div>
           )}
           <div className="divide-y divide-line">
-            <Row label="بیمار">
+            <Row label={t('common.patient')}>
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-brand"
@@ -181,25 +182,25 @@ export function TxDetailSheet({
                 <UserRound className="size-3.5" /> {tx.patient_name}
               </button>
             </Row>
-            {tx.treatment_title && <Row label="پرونده">{tx.treatment_title}</Row>}
-            {tx.type === 'refund' && tx.account_title && <Row label="از حساب">{tx.account_title}</Row>}
-            {tx.method && <Row label="روش">{METHOD_LABEL[tx.method]}</Row>}
+            {tx.treatment_title && <Row label={t('common.case')}>{tx.treatment_title}</Row>}
+            {tx.type === 'refund' && tx.account_title && <Row label={t('txDetail.fromAccount')}>{tx.account_title}</Row>}
+            {tx.method && <Row label={t('common.method')}>{METHOD_LABEL[tx.method]}</Row>}
             {tx.cheque_due_on && (
-              <Row label="سررسید چک">
+              <Row label={t('common.chequeDue')}>
                 {formatJ(tx.cheque_due_on)} <span className="text-ink-3">({relativeDay(tx.cheque_due_on)})</span>
               </Row>
             )}
             {tx.reference && (
-              <Row label={isCheque ? 'شماره چک' : 'شماره پیگیری'}>
+              <Row label={isCheque ? t('common.chequeNumber') : t('common.reference')}>
                 <span dir="ltr">{faDigits(tx.reference)}</span>
               </Row>
             )}
-            {tx.description && <Row label="توضیحات">{tx.description}</Row>}
-            <Row label="وضعیت در حساب">
+            {tx.description && <Row label={t('common.description')}>{tx.description}</Row>}
+            <Row label={t('txDetail.ledgerStatus')}>
               {tx.counts ? (
-                <span className="text-credit">اعمال شده</span>
+                <span className="text-credit">{t('txDetail.applied')}</span>
               ) : (
-                <span className="text-warn">هنوز از بدهی کم نشده</span>
+                <span className="text-warn">{t('txDetail.notApplied')}</span>
               )}
             </Row>
           </div>
@@ -214,24 +215,24 @@ export function TxDetailSheet({
                   onClick={() => setCheque('cleared')}
                   loading={save.isPending}
                 >
-                  <CheckCircle2 className="size-5" /> وصول شد
+                  <CheckCircle2 className="size-5" /> {t('txDetail.markCleared')}
                 </Button>
                 <Button variant="danger" onClick={() => setCheque('bounced')} disabled={save.isPending}>
-                  <Ban className="size-5" /> برگشت خورد
+                  <Ban className="size-5" /> {t('txDetail.markBounced')}
                 </Button>
               </>
             ) : (
               <Button variant="secondary" className="col-span-2" onClick={() => setCheque('pending')} loading={save.isPending}>
-                <RotateCcw className="size-4" /> بازگرداندن به «در انتظار وصول»
+                <RotateCcw className="size-4" /> {t('txDetail.markPending')}
               </Button>
             )}
           </div>
         )}
 
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <ActionTile icon={<Pencil className="size-5" />} label="ویرایش" onClick={() => onEdit(tx)} />
-          <ActionTile icon={<Copy className="size-5" />} label="کپی رسید" onClick={copy} />
-          <ActionTile icon={<Trash2 className="size-5" />} label="حذف" danger onClick={() => setConfirm(true)} />
+          <ActionTile icon={<Pencil className="size-5" />} label={t('common.edit')} onClick={() => onEdit(tx)} />
+          <ActionTile icon={<Copy className="size-5" />} label={t('txDetail.copyReceipt')} onClick={copy} />
+          <ActionTile icon={<Trash2 className="size-5" />} label={t('common.delete')} danger onClick={() => setConfirm(true)} />
         </div>
       </Sheet>
 
@@ -239,12 +240,12 @@ export function TxDetailSheet({
         open={confirm}
         onClose={() => setConfirm(false)}
         loading={del.isPending}
-        title="حذف این تراکنش؟"
-        message="مانده بیمار و گزارش‌ها دوباره محاسبه می‌شوند. این کار برگشت‌پذیر نیست."
+        title={t('txDetail.deleteTitle')}
+        message={t('txDetail.deleteMessage')}
         onConfirm={() =>
           del.mutate(tx.id, {
             onSuccess: () => {
-              toast.success('تراکنش حذف شد')
+              toast.success(t('txDetail.deleted'))
               setConfirm(false)
               onClose()
             },

@@ -16,7 +16,7 @@ def _month(year: int | None, month: int | None) -> JMonth:
     if year is None or month is None:
         return JMonth.of(today())
     if not 1 <= month <= 12 or not 1300 <= year <= 1500:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "ماه نامعتبر است")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "invalid_month")
     return JMonth(year, month)
 
 

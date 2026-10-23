@@ -6,8 +6,10 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/PageHeader'
 import { Card, cx, Pressable, Segmented } from '@/components/ui'
 import { api, download } from '@/lib/api'
+import { UNIT_LABEL } from '@/lib/format'
 import { keys } from '@/lib/queries'
 import { setPref, usePrefs, type Theme } from '@/lib/settings'
+import { t } from '@/lib/i18n'
 
 export function SettingsPage() {
   const prefs = usePrefs()
@@ -17,32 +19,32 @@ export function SettingsPage() {
     await api.post('/auth/logout').catch(() => undefined)
     qc.clear()
     qc.setQueryData(keys.me, null)
-    toast.success('خارج شدید')
+    toast.success(t('settings.loggedOut'))
   }
 
   return (
     <div>
-      <PageHeader back title="تنظیمات" />
+      <PageHeader back title={t('settings.title')} />
       <div className="space-y-5 px-4">
         <Card className="space-y-5 p-4">
-          <Setting label="واحد نمایش مبالغ" hint="مبالغ همیشه به ریال ذخیره می‌شوند؛ فقط نمایش تغییر می‌کند">
+          <Setting label={t('settings.unit')} hint={t('settings.unitHint')}>
             <Segmented
               value={prefs.unit}
               onChange={(v) => setPref('unit', v)}
               options={[
-                { value: 'rial', label: 'ریال' },
-                { value: 'toman', label: 'تومان' },
+                { value: 'rial', label: UNIT_LABEL.rial },
+                { value: 'toman', label: UNIT_LABEL.toman },
               ]}
             />
           </Setting>
-          <Setting label="ظاهر">
+          <Setting label={t('settings.appearance')}>
             <Segmented<Theme>
               value={prefs.theme}
               onChange={(v) => setPref('theme', v)}
               options={[
-                { value: 'dark', label: <Icon icon={<Moon className="size-4" />}>تیره</Icon> },
-                { value: 'light', label: <Icon icon={<Sun className="size-4" />}>روشن</Icon> },
-                { value: 'system', label: <Icon icon={<SunMoon className="size-4" />}>خودکار</Icon> },
+                { value: 'dark', label: <Icon icon={<Moon className="size-4" />}>{t('settings.dark')}</Icon> },
+                { value: 'light', label: <Icon icon={<Sun className="size-4" />}>{t('settings.light')}</Icon> },
+                { value: 'system', label: <Icon icon={<SunMoon className="size-4" />}>{t('settings.system')}</Icon> },
               ]}
             />
           </Setting>
@@ -52,7 +54,7 @@ export function SettingsPage() {
             className="flex w-full items-center justify-between"
           >
             <span className="flex items-center gap-3 text-sm font-semibold">
-              <EyeOff className="size-5 text-ink-3" /> پنهان کردن مبالغ
+              <EyeOff className="size-5 text-ink-3" /> {t('settings.hideAmounts')}
             </span>
             <span
               className={cx(
@@ -71,11 +73,11 @@ export function SettingsPage() {
         </Card>
 
         <Card className="divide-y divide-line">
-          <Row icon={<CalendarClock className="size-5 text-warn" />} label="چک‌ها" to="/cheques" />
+          <Row icon={<CalendarClock className="size-5 text-warn" />} label={t('settings.cheques')} to="/cheques" />
           <Row
             icon={<DatabaseBackup className="size-5 text-credit" />}
-            label="پشتیبان کامل (اکسل)"
-            hint="همه بیماران، تراکنش‌ها، پرونده‌ها و حساب‌ها"
+            label={t('settings.backup')}
+            hint={t('settings.backupHint')}
             onClick={() => download('/export/backup.xlsx')}
           />
         </Card>
@@ -84,8 +86,8 @@ export function SettingsPage() {
           <div className="flex items-start gap-3">
             <Smartphone className="mt-0.5 size-5 shrink-0 text-brand" />
             <p className="text-[13px] leading-7 text-ink-2">
-              برای نصب روی آیفون: در Safari دکمه <b>Share</b> را بزنید و <b>Add to Home Screen</b> را انتخاب کنید. برنامه
-              تمام‌صفحه و مثل یک اپ مستقل باز می‌شود.
+              {t('settings.installBefore')} <b>Share</b> {t('settings.installMiddle')} <b>Add to Home Screen</b>{' '}
+              {t('settings.installAfter')}
             </p>
           </div>
         </Card>
@@ -94,9 +96,9 @@ export function SettingsPage() {
           onClick={logout}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-debt/25 bg-debt/10 py-3.5 font-semibold text-debt"
         >
-          <LogOut className="size-5" /> خروج
+          <LogOut className="size-5" /> {t('settings.logout')}
         </Pressable>
-        <p className="pb-4 text-center text-[11px] text-ink-3">تراز · نسخه {__APP_VERSION__}</p>
+        <p className="pb-4 text-center text-[11px] text-ink-3">{t('app.version', { version: __APP_VERSION__ })}</p>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, formatJ, isoToJ, jToIso, monthLength, shiftMonth, weekdayIndex } from './jalali'
+import { faDigits } from './format'
+import { addDays, formatJ, isoToJ, jToIso, monthLength, MONTHS, shiftMonth, weekdayIndex } from './jalali'
 
 describe('jalali', () => {
   it('converts both ways', () => {
@@ -7,9 +8,9 @@ describe('jalali', () => {
     expect(jToIso({ jy: 1405, jm: 7, jd: 1 })).toBe('2026-09-23')
   })
 
-  it('formats in Persian', () => {
-    expect(formatJ('2026-10-23')).toBe('۱ آبان ۱۴۰۵')
-    expect(formatJ('2026-10-23', 'numeric')).toBe('۱۴۰۵/۰۸/۰۱')
+  it('formats with Persian digits and month names', () => {
+    expect(formatJ('2026-10-23')).toBe(`${faDigits(1)} ${MONTHS[7]} ${faDigits(1405)}`)
+    expect(formatJ('2026-10-23', 'numeric')).toBe(faDigits('1405/08/01'))
   })
 
   it('knows month lengths and wraps years', () => {

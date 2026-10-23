@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Sheet } from './Sheet'
 import { Button } from './ui'
+import { t } from '@/lib/i18n'
 
 export function ConfirmSheet({
   open,
@@ -9,7 +10,7 @@ export function ConfirmSheet({
   onConfirm,
   title,
   message,
-  confirmLabel = 'حذف',
+  confirmLabel = t('common.delete'),
   loading,
 }: {
   open: boolean
@@ -30,7 +31,7 @@ export function ConfirmSheet({
         <p className="mt-2 text-sm leading-7 text-ink-2">{message}</p>
         <div className="mt-6 grid w-full grid-cols-2 gap-3">
           <Button variant="secondary" onClick={onClose}>
-            انصراف
+            {t('common.cancel')}
           </Button>
           <Button variant="danger" onClick={onConfirm} loading={loading}>
             {confirmLabel}

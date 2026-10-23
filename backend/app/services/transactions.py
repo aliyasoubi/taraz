@@ -59,8 +59,8 @@ def to_out(tx: Transaction) -> TransactionOut:
     )
 
 
-def _bad(detail: str) -> HTTPException:
-    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, detail)
+def _bad(code: str) -> HTTPException:
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, code)
 
 
 def apply(db: Session, tx: Transaction, data: dict[str, Any]) -> Transaction:
@@ -73,12 +73,12 @@ def apply(db: Session, tx: Transaction, data: dict[str, Any]) -> Transaction:
         setattr(tx, key, value)
 
     if db.get(Patient, tx.patient_id) is None:
-        raise _bad("بیمار پیدا نشد")
+        raise _bad("patient_not_found")
 
     if tx.treatment_id is not None:
         treatment = db.get(Treatment, tx.treatment_id)
         if treatment is None or treatment.patient_id != tx.patient_id:
-            raise _bad("پرونده درمان متعلق به این بیمار نیست")
+            raise _bad("treatment_not_owned")
 
     if tx.type in (TxType.CHARGE, TxType.DISCOUNT):
         for f in _PAYMENT_FIELDS + _CHEQUE_FIELDS:
@@ -86,7 +86,7 @@ def apply(db: Session, tx: Transaction, data: dict[str, Any]) -> Transaction:
         return tx
 
     if tx.account_id is not None and db.get(Account, tx.account_id) is None:
-        raise _bad("حساب مقصد پیدا نشد")
+        raise _bad("account_not_found")
     if tx.method is None:
         tx.method = PaymentMethod.CARD
 
@@ -104,5 +104,5 @@ def apply(db: Session, tx: Transaction, data: dict[str, Any]) -> Transaction:
 def get_or_404(db: Session, tx_id: int) -> Transaction:
     tx = db.scalars(tx_select().where(Transaction.id == tx_id)).first()
     if tx is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "تراکنش پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "transaction_not_found")
     return tx

@@ -3,11 +3,17 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import pkg from './package.json' with { type: 'json' }
+import fa from './src/locales/fa.json' with { type: 'json' }
 
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   resolve: { alias: { '@': new URL('./src', import.meta.url).pathname } },
   plugins: [
+    {
+      // index.html carries %APP_NAME% instead of the Persian name itself.
+      name: 'app-name',
+      transformIndexHtml: (html) => html.replaceAll('%APP_NAME%', fa.app.name),
+    },
     react(),
     tailwindcss(),
     VitePWA({
@@ -16,9 +22,9 @@ export default defineConfig({
       injectRegister: false,
       pwaAssets: { config: true, overrideManifestIcons: true },
       manifest: {
-        name: 'تراز — حساب بیماران',
-        short_name: 'تراز',
-        description: 'پیگیری مانده حساب و پرداخت‌های بیماران',
+        name: fa.app.fullName,
+        short_name: fa.app.name,
+        description: fa.app.description,
         lang: 'fa',
         dir: 'rtl',
         display: 'standalone',

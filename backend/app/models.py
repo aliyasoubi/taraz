@@ -10,7 +10,7 @@ Every money movement is one row in `transactions`, scoped to a patient:
 
 A patient's balance is never stored, always derived, so it cannot drift from the
 rows that justify it. Positive balance = the patient owes; negative = credit
-(a deposit / بیعانه paid ahead of treatment).
+(a deposit paid ahead of treatment).
 
 A cheque payment counts only once it clears; until then it is tracked as
 pending and the debt stays open — the same way the old spreadsheet listed
@@ -59,12 +59,12 @@ class TxType(StrEnum):
 
 
 class PaymentMethod(StrEnum):
-    CARD = "card"  # کارت به کارت
-    TRANSFER = "transfer"  # پایا / ساتنا / انتقال
-    POS = "pos"  # کارتخوان
+    CARD = "card"  # card-to-card transfer
+    TRANSFER = "transfer"  # bank transfer (Paya / Satna)
+    POS = "pos"  # card terminal
     CASH = "cash"
     CHEQUE = "cheque"
-    CURRENCY = "currency"  # ارز (دلار …)
+    CURRENCY = "currency"  # foreign currency (dollars …)
     OTHER = "other"
 
 
@@ -75,9 +75,9 @@ class ChequeStatus(StrEnum):
 
 
 class AccountKind(StrEnum):
-    OWN = "own"  # حساب خودم
-    STAFF = "staff"  # منشی / همکار
-    THIRD_PARTY = "third_party"  # شخص ثالث — e.g. paid straight to a creditor of mine
+    OWN = "own"  # my own account
+    STAFF = "staff"  # receptionist / colleague
+    THIRD_PARTY = "third_party"  # e.g. paid straight to a creditor of mine
     POS = "pos"
     CASH = "cash"
     OTHER = "other"
@@ -128,7 +128,7 @@ class Patient(TimestampMixin, Base):
 
 
 class Treatment(TimestampMixin, Base):
-    """A treatment case (پرونده) — lets one patient carry separate balances,
+    """A treatment case — lets one patient carry separate balances,
     e.g. general work and an implant plan, as the old sheet did with `imp`."""
 
     __tablename__ = "treatments"

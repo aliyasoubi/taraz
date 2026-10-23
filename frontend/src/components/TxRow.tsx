@@ -1,11 +1,12 @@
 import { motion } from 'motion/react'
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, BadgePercent, Clock3, Stethoscope, XCircle } from 'lucide-react'
 import { formatJ, relativeDay } from '@/lib/jalali'
-import { METHOD_LABEL } from '@/lib/labels'
+import { METHOD_LABEL, TX_LABEL } from '@/lib/labels'
 import type { Transaction } from '@/lib/types'
 import { useLedgerUI } from '@/ledger-ui'
 import { Money } from './Money'
 import { cx, itemVariants } from './ui'
+import { t } from '@/lib/i18n'
 
 export function txVisual(tx: Transaction) {
   if (tx.type === 'payment') {
@@ -21,10 +22,10 @@ export function txVisual(tx: Transaction) {
 }
 
 export function txTitle(tx: Transaction): string {
-  if (tx.type === 'charge') return tx.description || tx.treatment_title || 'هزینه درمان'
-  if (tx.type === 'discount') return tx.description || 'تخفیف'
-  if (tx.type === 'refund') return tx.description || 'استرداد به بیمار'
-  return tx.description || (tx.method === 'cheque' ? 'چک' : 'پرداخت')
+  if (tx.type === 'charge') return tx.description || tx.treatment_title || TX_LABEL.charge
+  if (tx.type === 'discount') return tx.description || TX_LABEL.discount
+  if (tx.type === 'refund') return tx.description || t('txRow.refundToPatient')
+  return tx.description || (tx.method === 'cheque' ? METHOD_LABEL.cheque : TX_LABEL.payment)
 }
 
 /** One ledger line, styled like a bank statement entry: who paid → where it landed. */
@@ -71,10 +72,10 @@ export function TxRow({
             {flow ? (
               <>
                 <span className="truncate">
-                  {tx.type === 'refund' ? (tx.account_title ?? 'حساب') : (tx.payer_name ?? 'خود بیمار')}
+                  {tx.type === 'refund' ? (tx.account_title ?? t('common.account')) : (tx.payer_name ?? t('common.self'))}
                 </span>
                 <ArrowLeft className="size-3 shrink-0 opacity-70" />
-                <span className="truncate">{tx.type === 'refund' ? 'بیمار' : (tx.account_title ?? 'حساب نامشخص')}</span>
+                <span className="truncate">{tx.type === 'refund' ? t('common.patient') : (tx.account_title ?? t('common.unknownAccount'))}</span>
                 {tx.method && <span className="shrink-0 opacity-70">· {METHOD_LABEL[tx.method]}</span>}
               </>
             ) : (
@@ -83,13 +84,13 @@ export function TxRow({
           </div>
           <span className="shrink-0 text-[11px]">
             {tx.method === 'cheque' && tx.cheque_due_on && tx.cheque_status === 'pending'
-              ? `سررسید ${relativeDay(tx.cheque_due_on)}`
+              ? t('txRow.due', { when: relativeDay(tx.cheque_due_on) })
               : relativeDay(tx.occurred_on)}
           </span>
         </div>
         {runningBalance !== undefined && (
           <p className="mt-0.5 text-[11px] text-ink-3">
-            مانده پس از این ردیف: <Money value={runningBalance} tone="auto" unit={false} className="font-semibold" />
+            {t('txRow.balanceAfter')} <Money value={runningBalance} tone="auto" unit={false} className="font-semibold" />
           </p>
         )}
       </div>

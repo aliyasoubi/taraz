@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { IconButton } from './ui'
+import { t } from '@/lib/i18n'
 
 /** iOS-style large title that condenses into a glass bar as the page scrolls. */
 export function PageHeader({
@@ -29,7 +30,7 @@ export function PageHeader({
         <div className="relative flex h-12 items-center justify-between gap-2 px-4">
           <div className="flex min-w-10 items-center">
             {back && (
-              <IconButton onClick={() => (history.length > 1 ? navigate(-1) : navigate('/'))} aria-label="بازگشت">
+              <IconButton onClick={() => (history.length > 1 ? navigate(-1) : navigate('/'))} aria-label={t('common.back')}>
                 <ChevronRight className="size-5" />
               </IconButton>
             )}

@@ -4,6 +4,7 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 
 from app.db import SessionLocal
+from app.i18n import t
 from app.services import importer
 from app.services.jalali import JMonth, parse_jalali
 from tests.conftest import Api
@@ -20,8 +21,8 @@ def test_jalali_month_boundaries() -> None:
 
 
 def test_month_end_statement(api: Api) -> None:
-    pid = api.patient("بیمار ماهانه")
-    acc = api.account("بلو", color="sky")
+    pid = api.patient("Monthly Patient")
+    acc = api.account("Blu", color="sky")
     api.tx(pid, "charge", 1_000, on="2026-09-10")  # Shahrivar → opening balance
     api.tx(pid, "charge", 500, on="2026-10-01")
     api.tx(pid, "payment", 300, on="2026-10-05", account_id=acc, method="card")
@@ -30,7 +31,7 @@ def test_month_end_statement(api: Api) -> None:
     api.tx(pid, "payment", 200, on="2026-10-10", method="cheque", cheque_due_on="2026-11-05")
 
     r = api.c.get("/api/reports/monthly", params={"year": 1405, "month": 7}).json()
-    assert r["month"]["label"] == "مهر 1405"
+    assert r["month"]["label"] == f"{t('months')[6]} 1405"
     (row,) = r["rows"]
     assert (row["opening"], row["charged"], row["paid"], row["closing"]) == (1_000, 500, 300, 1_200)
     assert row["pending_cheques"] == 200
@@ -39,7 +40,7 @@ def test_month_end_statement(api: Api) -> None:
         1_200,
         1,
     )
-    assert [(a["label"], a["amount"]) for a in r["by_account"]] == [("بلو", 300)]
+    assert [(a["label"], a["amount"]) for a in r["by_account"]] == [("Blu", 300)]
     assert r["cheques_due"] == []
 
 
@@ -63,7 +64,7 @@ def test_monthly_report_rejects_bad_month(api: Api) -> None:
 
 
 def test_dashboard(api: Api) -> None:
-    a, b = api.patient("الف"), api.patient("ب")
+    a, b = api.patient("A"), api.patient("B")
     api.tx(a, "charge", 700)
     api.tx(b, "payment", 50, method="cash")
     api.tx(a, "payment", 100, method="cheque", cheque_due_on="2026-12-01")
@@ -71,7 +72,7 @@ def test_dashboard(api: Api) -> None:
     assert (d["receivable"], d["credit"], d["debtors_count"]) == (700, 50, 1)
     assert (d["pending_cheques_total"], d["pending_cheques_count"]) == (100, 1)
     assert len(d["series"]) == 6
-    assert d["top_debtors"][0]["name"] == "الف"
+    assert d["top_debtors"][0]["name"] == "A"
 
 
 def test_excel_exports(api: Api) -> None:
@@ -80,24 +81,26 @@ def test_excel_exports(api: Api) -> None:
     r = api.c.get("/api/reports/monthly.xlsx", params={"year": 1405, "month": 7})
     assert r.status_code == 200
     wb = load_workbook(BytesIO(r.content))
-    assert wb.sheetnames[:2] == ["خلاصه", "صورت‌حساب بیماران"]
-    assert wb["صورت‌حساب بیماران"].sheet_view.rightToLeft
+    sheets = t("export.sheets")
+    assert wb.sheetnames[:2] == [sheets["summary"], sheets["statement"]]
+    assert wb[sheets["statement"]].sheet_view.rightToLeft
 
     backup = load_workbook(BytesIO(api.c.get("/api/export/backup.xlsx").content))
-    assert backup["تراکنش‌ها"].max_row == 2
+    assert backup[sheets["transactions"]].max_row == 2
 
 
 def test_import_debtors_sheet(tmp_path: Path, api: Api) -> None:
     wb = Workbook()
     ws = wb.active
     ws.title = importer.SHEET
-    ws.append(["اسم بیمار", "مانده حساب", "تاریخ", "بانک - حساب", "توضیحات"])
-    ws.append(["بیمار یک", 100, None, None, None])
-    ws.append(["بیمار یک imp", 900, None, None, None])
-    ws.append(["بیمار. دو", 650, "1405-08-25", "چک فروهر", None])
-    ws.append(["بیمار دو", 650, "1405-09-25", "چک", None])
-    ws.append(["بیمار سه", "?", None, None, None])
-    ws.append(["بیمار چهار", 2000, "چک", None, None])
+    cheque = t("import.cheque")
+    ws.append(["name", "balance", "date", "account", "note"])
+    ws.append(["Patient One", 100, None, None, None])
+    ws.append(["Patient One imp", 900, None, None, None])
+    ws.append(["Patient. Two", 650, "1405-08-25", f"{cheque} Forouhar", None])
+    ws.append(["Patient Two", 650, "1405-09-25", cheque, None])
+    ws.append(["Patient Three", "?", None, None, None])
+    ws.append(["Patient Four", 2000, cheque, None, None])
     path = tmp_path / "old.xlsx"
     wb.save(path)
 
@@ -107,21 +110,21 @@ def test_import_debtors_sheet(tmp_path: Path, api: Api) -> None:
     assert result.skipped and result.skipped[0][0] == 6
 
     patients = {p["name"]: p for p in api.c.get("/api/patients").json()}
-    one, two = patients["بیمار یک"], patients["بیمار دو"]
+    one, two = patients["Patient One"], patients["Patient Two"]
     assert one["balance"] == 1_000
     assert [t["kind"] for t in api.balance(one["id"])["treatments"]] == ["implant"]
     assert (two["balance"], two["pending_cheques"]) == (1_300, 1_300)
     cheques = api.c.get(
         "/api/transactions", params={"patient_id": two["id"], "type": "payment"}
     ).json()
-    assert sorted(c["payer_name"] or "" for c in cheques["items"]) == ["", "فروهر"]
+    assert sorted(c["payer_name"] or "" for c in cheques["items"]) == ["", "Forouhar"]
 
 
 def test_sqlite_backup_is_readable_and_pruned(tmp_path: Path, api: Api) -> None:
     from app.cli import backup_sqlite
     from app.config import get_settings
 
-    api.patient("پشتیبان")
+    api.patient("Backup Check")
     db_path = Path(get_settings().database_url.removeprefix("sqlite:///"))
     for _ in range(3):
         last = backup_sqlite(db_path, tmp_path, keep=2)
@@ -129,4 +132,4 @@ def test_sqlite_backup_is_readable_and_pruned(tmp_path: Path, api: Api) -> None:
 
     assert len(list(tmp_path.glob("taraz-*.db"))) <= 2
     with sqlite3.connect(last) as conn:
-        assert conn.execute("select name from patients").fetchall() == [("پشتیبان",)]
+        assert conn.execute("select name from patients").fetchall() == [("Backup Check",)]

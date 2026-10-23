@@ -12,6 +12,23 @@ and money.
 - `*.xlsx`, `*.db`, `backend/data/` and `.env` files are gitignored; keep them that way.
 - Tests and demos use fake names only (`python -m app.cli seed-demo` fills an empty DB).
 
+## Language
+
+Code, comments, tests, commits and docs are English. Every user-facing string
+lives in a locale file:
+
+- `frontend/src/locales/fa.json` — UI text, used as `t('section.key', { vars })`
+  from `src/lib/i18n.ts` (keys are type-checked). Enum labels come from
+  `src/lib/labels.ts`, which reads the same file.
+- `backend/app/i18n/fa.json` — Excel export labels, the words the importer
+  matches, demo data; used as `t("export.sheets.summary")` from `app.i18n`.
+
+API errors are English codes (`raise HTTPException(404, "patient_not_found")`)
+with a matching `errors.<code>` entry in the frontend locale file.
+`./scripts/check-no-persian.sh` (CI) rejects Persian anywhere else. Where
+Persian characters are data, not text (folding tables, test fixtures), write
+them as `\uXXXX` escapes.
+
 ## Ledger rules
 
 - Amounts are integer **rials**. Toman is display-only (`frontend/src/lib/format.ts`).
@@ -36,6 +53,7 @@ Tests run the real migrations, so a model change without a migration fails CI.
 ## Before you push
 
 ```bash
+./scripts/check-no-persian.sh
 cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && .venv/bin/pytest
 cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```

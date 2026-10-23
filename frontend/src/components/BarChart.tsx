@@ -4,6 +4,7 @@ import { MONTHS } from '@/lib/jalali'
 import type { SeriesPoint } from '@/lib/types'
 import { Money } from './Money'
 import { cx } from './ui'
+import { t } from '@/lib/i18n'
 
 /** Received (filled) vs charged (outline) per month. Tap a month for its figures. */
 export function BarChart({ series }: { series: SeriesPoint[] }) {
@@ -15,11 +16,11 @@ export function BarChart({ series }: { series: SeriesPoint[] }) {
     <div>
       <div className="mb-4 flex items-end justify-between">
         <div>
-          <p className="text-xs text-ink-3">دریافتی {point ? MONTHS[point.month - 1] : ''}</p>
+          <p className="text-xs text-ink-3">{t('chart.received', { month: point ? (MONTHS[point.month - 1] ?? '') : '' })}</p>
           <Money value={point?.received ?? 0} className="text-xl font-extrabold text-ink" />
         </div>
         <div className="text-end">
-          <p className="text-xs text-ink-3">هزینه‌های ثبت‌شده</p>
+          <p className="text-xs text-ink-3">{t('chart.charged')}</p>
           <Money value={point?.charged ?? 0} className="text-sm font-bold text-ink-2" />
         </div>
       </div>

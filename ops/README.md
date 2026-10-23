@@ -63,7 +63,7 @@ Copy `/var/backups/taraz` off the server too (the same place patient-book's
 backups go). Restore = stop the container, copy a snapshot over
 `/data/taraz.db` in the volume, start it.
 
-The app's Settings → «پشتیبان کامل (اکسل)» also downloads every row as a workbook.
+The app's Settings → "full backup (Excel)" also downloads every row as a workbook.
 
 ## Updates
 

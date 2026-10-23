@@ -33,12 +33,12 @@ def login(
     if wait:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
-            "تعداد تلاش‌ها زیاد بود؛ کمی بعد دوباره امتحان کنید",
+            "too_many_attempts",
             headers={"Retry-After": str(wait)},
         )
     if not verify_password(body.password, settings):
         login_throttle.fail(client)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "رمز عبور درست نیست")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "wrong_password")
     login_throttle.reset(client)
     token, max_age = issue_session(settings)
     response.set_cookie(

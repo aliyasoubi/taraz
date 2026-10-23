@@ -3,13 +3,14 @@ import { BarChart3, CreditCard, Home, Plus, Users } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router'
 import { useLedgerUI } from '@/ledger-ui'
 import { cx, Pressable, spring } from './ui'
+import { t } from '@/lib/i18n'
 
 const TABS = [
-  { to: '/', label: 'خانه', icon: Home, end: true },
-  { to: '/patients', label: 'بیماران', icon: Users },
+  { to: '/', label: t('nav.home'), icon: Home, end: true },
+  { to: '/patients', label: t('nav.patients'), icon: Users },
   null, // the add button sits in the middle
-  { to: '/accounts', label: 'حساب‌ها', icon: CreditCard },
-  { to: '/reports', label: 'گزارش', icon: BarChart3 },
+  { to: '/accounts', label: t('nav.accounts'), icon: CreditCard },
+  { to: '/reports', label: t('nav.reports'), icon: BarChart3 },
 ] as const
 
 export function TabBar() {
@@ -24,7 +25,7 @@ export function TabBar() {
           tab === null ? (
             <Pressable
               key="add"
-              aria-label="ثبت تراکنش"
+              aria-label={t('nav.addTransaction')}
               onClick={() => newTransaction({ patientId: patientMatch ? Number(patientMatch[1]) : undefined })}
               className="relative -my-4 grid size-14 place-items-center rounded-full bg-brand-gradient text-white shadow-[0_10px_30px_-6px] shadow-brand/70"
               whileTap={{ scale: 0.9, rotate: 90 }}

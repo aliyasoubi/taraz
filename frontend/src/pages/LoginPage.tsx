@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { api, ApiError } from '@/lib/api'
 import { keys } from '@/lib/queries'
 import { Button, TextInput } from '@/components/ui'
+import { t } from '@/lib/i18n'
 
 export function LoginPage() {
   const qc = useQueryClient()
@@ -23,7 +24,7 @@ export function LoginPage() {
       await api.post('/auth/login', { password })
       qc.setQueryData(keys.me, { authenticated: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'ارتباط با سرور برقرار نشد')
+      setError(err instanceof ApiError ? err.message : t('errors.network'))
       setShake((n) => n + 1)
     } finally {
       setLoading(false)
@@ -48,9 +49,9 @@ export function LoginPage() {
             transition={{ type: 'spring', stiffness: 180, damping: 12, delay: 0.1 }}
           />
           <h1 className="mt-6 text-4xl font-black tracking-tight">
-            <span className="text-gradient">تراز</span>
+            <span className="text-gradient">{t('app.name')}</span>
           </h1>
-          <p className="mt-2 text-sm text-ink-3">حساب و کتاب بیماران، همیشه همراه شما</p>
+          <p className="mt-2 text-sm text-ink-3">{t('app.tagline')}</p>
         </div>
 
         <motion.form
@@ -61,7 +62,7 @@ export function LoginPage() {
           className="glass rounded-[28px] border border-line-2 p-5 shadow-float"
         >
           <label className="mb-2 flex items-center gap-2 text-[13px] font-medium text-ink-2">
-            <LockKeyhole className="size-4" /> رمز عبور
+            <LockKeyhole className="size-4" /> {t('login.password')}
           </label>
           <div className="relative">
             <TextInput
@@ -77,14 +78,14 @@ export function LoginPage() {
               type="button"
               onClick={() => setShow((s) => !s)}
               className="absolute end-3 top-1/2 -translate-y-1/2 text-ink-3"
-              aria-label={show ? 'پنهان کردن رمز' : 'نمایش رمز'}
+              aria-label={show ? t('login.hidePassword') : t('login.showPassword')}
             >
               {show ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
             </button>
           </div>
           {error && <p className="mt-3 text-sm text-debt">{error}</p>}
           <Button type="submit" className="mt-5 w-full" loading={loading} disabled={!password}>
-            ورود
+            {t('login.submit')}
           </Button>
         </motion.form>
       </motion.div>

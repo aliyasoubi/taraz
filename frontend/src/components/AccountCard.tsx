@@ -6,6 +6,7 @@ import { ACCOUNT_KIND_LABEL, accountGradient } from '@/lib/labels'
 import type { Account, AccountKind } from '@/lib/types'
 import { Money } from './Money'
 import { cx } from './ui'
+import { t } from '@/lib/i18n'
 
 export const KIND_ICON: Record<AccountKind, typeof CreditCard> = {
   own: CreditCard,
@@ -60,9 +61,9 @@ export function AccountCard({
             {!small && (
               <p className="mt-0.5 truncate text-[12px] text-white/75">
                 {[
-                  account.bank && `بانک ${account.bank}`,
+                  account.bank && t('accountCard.bank', { bank: account.bank }),
                   account.owner_name !== account.title && account.owner_name,
-                  account.tx_count ? `${faDigits(account.tx_count)} تراکنش` : null,
+                  account.tx_count ? t('common.txCount', { n: faDigits(account.tx_count) }) : null,
                 ]
                   .filter(Boolean)
                   .join(' · ') || ACCOUNT_KIND_LABEL[account.kind]}
@@ -81,7 +82,7 @@ export function AccountCard({
         ) : (
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-[11px] text-white/70">واریزی این ماه</p>
+              <p className="text-[11px] text-white/70">{t('accountCard.receivedThisMonth')}</p>
               <Money value={account.received_this_month ?? 0} className="text-2xl font-extrabold" />
             </div>
             <p dir="ltr" className="tabular text-sm tracking-[0.2em] text-white/85">

@@ -1,13 +1,16 @@
-"""One-time import of the old spreadsheet's «لیست بدهکاران» sheet as opening balances.
+"""One-time import of the old spreadsheet's debtors sheet as opening balances.
 
-Each row becomes a charge («مانده انتقالی از اکسل») on the patient's ledger. A
-row that is a cheque («چک …» in the account column) additionally becomes a
-pending cheque payment for the same amount, so the debt stays open until the
-cheque clears — exactly how the sheet treated it.
+Each row becomes a charge ("balance carried over from Excel") on the patient's
+ledger. A row that is a cheque (the account column starts with the word for
+cheque) additionally becomes a pending cheque payment for the same amount, so
+the debt stays open until the cheque clears — exactly how the sheet treated it.
 
-Names are matched loosely (letter variants, dots, spacing). A trailing
-`imp`/`ایمپلنت` or `ارتو` moves the row onto an implant or ortho case of the
-same patient, as the sheet did with separate «… imp» rows.
+Names are matched loosely (letter variants, dots, spacing). A trailing `imp`
+(or the Persian word for implant / ortho / laminate) moves the row onto that
+treatment case of the same patient, as the sheet did with separate "… imp" rows.
+
+The sheet name and every Persian word matched here come from the locale file
+(``app/i18n/fa.json``, section ``import``).
 """
 
 import re
@@ -19,6 +22,7 @@ from openpyxl import load_workbook
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.models import (
     ChequeStatus,
     Patient,
@@ -31,13 +35,19 @@ from app.models import (
 from app.services.jalali import parse_jalali
 from app.services.text import fold, tidy
 
-SHEET = "لیست بدهکاران"
-OPENING_NOTE = "مانده انتقالی از اکسل"
+SHEET: str = t("import.sheet")
+CHEQUE: str = t("import.cheque")
+
+
+def _suffix_pattern(words: list[str]) -> re.Pattern[str]:
+    # Longest first, so "ortho…" wins over its own prefix.
+    alternatives = "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
+    return re.compile(rf"\s*({alternatives})\s*$", re.IGNORECASE)
+
 
 _SUFFIXES: list[tuple[re.Pattern[str], TreatmentKind, str]] = [
-    (re.compile(r"\s*(imp|ایمپلنت)\s*$", re.IGNORECASE), TreatmentKind.IMPLANT, "ایمپلنت"),
-    (re.compile(r"\s*ارتو(دنسی)?\s*$"), TreatmentKind.ORTHO, "ارتودنسی"),
-    (re.compile(r"\s*لامینت\s*$"), TreatmentKind.LAMINATE, "لمینت"),
+    (_suffix_pattern(words), TreatmentKind(kind), t(f"treatment.{kind}"))
+    for kind, words in t("import.suffixes").items()
 ]
 
 
@@ -74,7 +84,7 @@ def _amount(value: object) -> int | None:
 
 
 def _split_name(raw: str) -> tuple[str, TreatmentKind | None, str | None]:
-    name = tidy(raw.replace(".", " "))  # «نام. فامیل»
+    name = tidy(raw.replace(".", " "))  # "First. Last" → "First Last"
     for pattern, kind, title in _SUFFIXES:
         if pattern.search(name):
             return tidy(pattern.sub("", name)), kind, title
@@ -84,7 +94,7 @@ def _split_name(raw: str) -> tuple[str, TreatmentKind | None, str | None]:
 def parse(path: Path) -> ImportResult:
     wb = load_workbook(path, read_only=True, data_only=True)
     if SHEET not in wb.sheetnames:
-        raise ValueError(f"sheet «{SHEET}» not found; sheets: {', '.join(wb.sheetnames)}")
+        raise ValueError(f"sheet {SHEET!r} not found; sheets: {', '.join(wb.sheetnames)}")
     result = ImportResult()
     for line, row in enumerate(wb[SHEET].iter_rows(min_row=2, values_only=True), start=2):
         cells = [*row, None, None, None, None, None][:5]
@@ -101,19 +111,19 @@ def parse(path: Path) -> ImportResult:
         due_on = parse_jalali(date_text) if date_text else None
 
         if date_text and due_on is None and kind is None:
-            # A word in the date column, e.g. «ایمپلنت» or «چک».
+            # A word in the date column, e.g. "implant" or "cheque".
             for pattern, k, title in _SUFFIXES:
                 if pattern.search(" " + date_text):
                     kind, case_title = k, title
-        cheque = account_text.startswith("چک") or date_text == "چک"
-        payer = tidy(account_text[2:]) if account_text.startswith("چک") else None
+        cheque = account_text.startswith(CHEQUE) or date_text == CHEQUE
+        payer = tidy(account_text[len(CHEQUE) :]) if account_text.startswith(CHEQUE) else None
 
         notes = [n for n in (str(raw_note).strip() if raw_note else "",) if n]
         if not cheque and account_text:
             notes.append(account_text)
         if not cheque and due_on:
-            notes.append(f"سررسید {date_text}")
-        if date_text and due_on is None and date_text != "چک" and kind is None:
+            notes.append(t("import.dueNote", date=date_text))
+        if date_text and due_on is None and date_text != CHEQUE and kind is None:
             notes.append(date_text)
         result.rows.append(
             ParsedRow(
@@ -177,7 +187,8 @@ def run(db: Session, path: Path, as_of: date, *, dry_run: bool = False) -> Impor
                 type=TxType.CHARGE,
                 amount=r.amount,
                 occurred_on=as_of,
-                description=f"{OPENING_NOTE} (ردیف {r.line})" + (f" — {r.note}" if r.note else ""),
+                description=t("import.openingNote", line=r.line)
+                + (f" — {r.note}" if r.note else ""),
             )
         )
         result.charges += 1
@@ -193,7 +204,7 @@ def run(db: Session, path: Path, as_of: date, *, dry_run: bool = False) -> Impor
                     cheque_status=ChequeStatus.PENDING,
                     cheque_due_on=r.due_on,
                     payer_name=r.payer,
-                    description=f"چک انتقالی از اکسل (ردیف {r.line})",
+                    description=t("import.chequeNote", line=r.line),
                 )
             )
             result.cheques += 1

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { formatMoney, UNIT_LABEL } from '@/lib/format'
 import { todayIso } from '@/lib/jalali'
-import { CHEQUE_LABEL, METHOD_LABEL, TX_LABEL } from '@/lib/labels'
+import { CHEQUE_LABEL, METHOD_LABEL, QUICK_NOTES, TX_LABEL, TX_SHORT_LABEL } from '@/lib/labels'
 import { useAccounts, usePatient, usePatients, useSaveTransaction, useSuggestions } from '@/lib/queries'
 import { usePrefs } from '@/lib/settings'
 import type { ChequeStatus, PaymentMethod, Transaction, TxType } from '@/lib/types'
@@ -16,6 +16,7 @@ import { AccountFormSheet, errorMessage, PatientFormSheet, TreatmentFormSheet } 
 import { Money } from './Money'
 import { Sheet } from './Sheet'
 import { Button, Chip, cx, Field, Pressable, Segmented, spring, TextInput } from './ui'
+import { t } from '@/lib/i18n'
 
 export interface TxPreset {
   patientId?: number
@@ -24,12 +25,6 @@ export interface TxPreset {
 }
 
 const METHODS: PaymentMethod[] = ['card', 'pos', 'transfer', 'cash', 'cheque', 'currency', 'other']
-const QUICK_NOTES: Record<TxType, string[]> = {
-  payment: ['بیعانه', 'قسط', 'تسویه', 'ویزیت'],
-  charge: ['ویزیت', 'طرح درمان', 'ترمیم', 'عصب‌کشی', 'جرم‌گیری', 'ایمپلنت', 'لمینت', 'مسواک و خمیردندان'],
-  discount: ['تخفیف', 'تخفیف تسویه'],
-  refund: ['استرداد بیعانه', 'استرداد اضافه پرداخت'],
-}
 const LAST_ACCOUNT_KEY = 'taraz.lastAccount'
 
 function rememberedAccount(): number | null {
@@ -58,7 +53,7 @@ function PatientPicker({ onPick }: { onPick: (id: number) => void }) {
     <div>
       <div className="relative">
         <Search className="pointer-events-none absolute start-4 top-1/2 size-5 -translate-y-1/2 text-ink-3" />
-        <TextInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجوی بیمار…" className="ps-12" autoFocus />
+        <TextInput value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('txForm.searchPatient')} className="ps-12" autoFocus />
       </div>
       <div className="mt-2 max-h-64 space-y-1 overflow-y-auto">
         {data.slice(0, 30).map((p) => (
@@ -72,14 +67,14 @@ function PatientPicker({ onPick }: { onPick: (id: number) => void }) {
             {p.balance !== 0 && <Money value={p.balance} tone="auto" compact className="text-xs font-semibold" />}
           </Pressable>
         ))}
-        {!isFetching && data.length === 0 && <p className="py-3 text-center text-sm text-ink-3">بیماری پیدا نشد</p>}
+        {!isFetching && data.length === 0 && <p className="py-3 text-center text-sm text-ink-3">{t('txForm.noPatientFound')}</p>}
       </div>
       <Pressable
         onClick={() => setCreating(true)}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-line-2 py-3 text-sm font-semibold text-brand"
       >
         <UserPlus className="size-4" />
-        {q.trim() ? `افزودن «${q.trim()}»` : 'بیمار جدید'}
+        {q.trim() ? t('txForm.addNamed', { name: q.trim() }) : t('common.newPatient')}
       </Pressable>
       <PatientFormSheet
         key={creating ? 'new' : 'idle'}
@@ -170,7 +165,7 @@ export function TxFormSheet({
               /* convenience only */
             }
           }
-          toast.success(editing ? 'تغییرات ذخیره شد' : `${TX_LABEL[type]} ثبت شد`)
+          toast.success(editing ? t('txForm.saved') : t('txForm.created', { type: TX_LABEL[type] }))
           onClose()
           onSaved?.(tx)
         },
@@ -186,10 +181,10 @@ export function TxFormSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title={editing ? 'ویرایش تراکنش' : 'تراکنش جدید'}
+      title={editing ? t('txForm.editTitle') : t('txForm.newTitle')}
       footer={
         <Button className="w-full" onClick={submit} loading={save.isPending} disabled={!valid}>
-          {editing ? 'ذخیره تغییرات' : `ثبت ${TX_LABEL[type]}`}
+          {editing ? t('txForm.saveChanges') : t('txForm.submit', { type: TX_LABEL[type] })}
           {amount ? (
             <span className="tabular rounded-lg bg-white/20 px-2 py-0.5 text-[13px]">
               {formatMoney(amount, unit)} {UNIT_LABEL[unit]}
@@ -203,23 +198,23 @@ export function TxFormSheet({
           value={type}
           onChange={setType}
           options={[
-            { value: 'payment', label: 'پرداخت' },
-            { value: 'charge', label: 'هزینه' },
-            { value: 'discount', label: 'تخفیف' },
-            { value: 'refund', label: 'استرداد' },
+            { value: 'payment', label: TX_SHORT_LABEL.payment },
+            { value: 'charge', label: TX_SHORT_LABEL.charge },
+            { value: 'discount', label: TX_SHORT_LABEL.discount },
+            { value: 'refund', label: TX_SHORT_LABEL.refund },
           ]}
         />
 
         {/* Patient */}
         <div>
-          <SectionLabel>بیمار</SectionLabel>
+          <SectionLabel>{t('common.patient')}</SectionLabel>
           {patientId && p ? (
             <motion.div layout className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2/60 p-3">
               <Avatar name={p.name} size={42} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{p.name}</p>
                 <p className="text-xs text-ink-3">
-                  مانده فعلی: <Money value={p.balance} tone="auto" className="font-semibold" />
+                  {t('txForm.currentBalance')} <Money value={p.balance} tone="auto" className="font-semibold" />
                 </p>
               </div>
               {!editing && (
@@ -230,7 +225,7 @@ export function TxFormSheet({
                     setTreatmentId(null)
                   }}
                   className="grid size-8 place-items-center rounded-full bg-surface text-ink-3"
-                  aria-label="تغییر بیمار"
+                  aria-label={t('txForm.changePatient')}
                 >
                   <X className="size-4" />
                 </button>
@@ -244,7 +239,7 @@ export function TxFormSheet({
         </div>
 
         <div>
-          <SectionLabel>مبلغ</SectionLabel>
+          <SectionLabel>{t('amount.label')}</SectionLabel>
           <AmountInput value={amount} onChange={setAmount} tone={tone} />
         </div>
 
@@ -260,13 +255,13 @@ export function TxFormSheet({
             >
               {type === 'payment' && (
                 <div>
-                  <SectionLabel hint="چه کسی پول را واریز کرد؟">مبدا · پرداخت‌کننده</SectionLabel>
+                  <SectionLabel hint={t('txForm.payerHint')}>{t('txForm.payerLabel')}</SectionLabel>
                   <Segmented
                     value={payerOther ? 'other' : 'self'}
                     onChange={(v) => setPayerOther(v === 'other')}
                     options={[
-                      { value: 'self', label: 'خود بیمار' },
-                      { value: 'other', label: 'شخص دیگر' },
+                      { value: 'self', label: t('common.self') },
+                      { value: 'other', label: t('txForm.someoneElse') },
                     ]}
                   />
                   {payerOther && (
@@ -274,7 +269,7 @@ export function TxFormSheet({
                       <TextInput
                         value={payerName}
                         onChange={(e) => setPayerName(e.target.value)}
-                        placeholder="مثلاً محمد (همسر بیمار)"
+                        placeholder={t('txForm.payerPlaceholder')}
                       />
                       {payers.length > 0 && (
                         <div className="no-scrollbar -mx-5 mt-2 flex gap-2 overflow-x-auto px-5">
@@ -291,8 +286,8 @@ export function TxFormSheet({
               )}
 
               <div>
-                <SectionLabel hint={type === 'refund' ? 'از کدام حساب برگشت داده شد؟' : 'پول به حساب چه کسی رفت؟'}>
-                  {type === 'refund' ? 'از حساب' : 'مقصد · به حساب'}
+                <SectionLabel hint={type === 'refund' ? t('txForm.refundFromHint') : t('txForm.destinationHint')}>
+                  {type === 'refund' ? t('txForm.refundFromLabel') : t('txForm.destinationLabel')}
                 </SectionLabel>
                 <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 py-1">
                   {activeAccounts.map((a) => (
@@ -310,14 +305,14 @@ export function TxFormSheet({
                   >
                     <span className="flex flex-col items-center gap-1 text-xs font-semibold">
                       <Plus className="size-5" />
-                      حساب جدید
+                      {t('common.newAccount')}
                     </span>
                   </Pressable>
                 </div>
               </div>
 
               <div>
-                <SectionLabel>روش پرداخت</SectionLabel>
+                <SectionLabel>{t('txForm.methodLabel')}</SectionLabel>
                 <div className="flex flex-wrap gap-2">
                   {METHODS.filter((m) => type === 'payment' || m !== 'cheque').map((m) => (
                     <Chip key={m} active={method === m} onClick={() => setMethod(m)}>
@@ -329,8 +324,8 @@ export function TxFormSheet({
 
               {isCheque ? (
                 <div className="space-y-4 rounded-3xl border border-warn/25 bg-warn/5 p-4">
-                  <DateField label="تاریخ سررسید چک" value={chequeDue} onChange={setChequeDue} quick={false} />
-                  <Field label="شماره چک" hint="اختیاری">
+                  <DateField label={t('txForm.chequeDueLabel')} value={chequeDue} onChange={setChequeDue} quick={false} />
+                  <Field label={t('common.chequeNumber')} hint={t('common.optional')}>
                     <TextInput value={reference} onChange={(e) => setReference(e.target.value)} inputMode="numeric" dir="ltr" />
                   </Field>
                   <Segmented
@@ -339,11 +334,11 @@ export function TxFormSheet({
                     options={(['pending', 'cleared', 'bounced'] as const).map((s) => ({ value: s, label: CHEQUE_LABEL[s] }))}
                   />
                   <p className="text-xs leading-6 text-ink-3">
-                    تا وقتی چک وصول نشده، از بدهی بیمار کم نمی‌شود و در «چک‌های در جریان» دیده می‌شود.
+                    {t('txForm.chequeNote')}
                   </p>
                 </div>
               ) : (
-                <Field label="شماره پیگیری" hint="اختیاری">
+                <Field label={t('common.reference')} hint={t('common.optional')}>
                   <TextInput value={reference} onChange={(e) => setReference(e.target.value)} dir="ltr" inputMode="numeric" />
                 </Field>
               )}
@@ -354,28 +349,28 @@ export function TxFormSheet({
         {/* Treatment case */}
         {p && (
           <div>
-            <SectionLabel hint="اختیاری">پرونده درمان</SectionLabel>
+            <SectionLabel hint={t('common.optional')}>{t('txForm.caseLabel')}</SectionLabel>
             <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
               <Chip active={treatmentId === null} onClick={() => setTreatmentId(null)}>
-                بدون پرونده
+                {t('common.noCase')}
               </Chip>
-              {p.treatments.map((t) => (
-                <Chip key={t.id} active={treatmentId === t.id} onClick={() => setTreatmentId(t.id)}>
-                  {t.title}
+              {p.treatments.map((tr) => (
+                <Chip key={tr.id} active={treatmentId === tr.id} onClick={() => setTreatmentId(tr.id)}>
+                  {tr.title}
                 </Chip>
               ))}
               <Chip onClick={() => setSheet('treatment')} className="border-dashed text-brand">
-                <Plus className="size-3.5" /> پرونده جدید
+                <Plus className="size-3.5" /> {t('common.newCase')}
               </Chip>
             </div>
           </div>
         )}
 
-        <DateField label={type === 'payment' ? 'تاریخ پرداخت' : 'تاریخ'} value={occurredOn} onChange={setOccurredOn} />
+        <DateField label={type === 'payment' ? t('txForm.paymentDate') : t('txForm.date')} value={occurredOn} onChange={setOccurredOn} />
 
         <div>
-          <Field label="توضیحات">
-            <TextInput value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اختیاری" />
+          <Field label={t('common.description')}>
+            <TextInput value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('common.optional')} />
           </Field>
           <div className="no-scrollbar -mx-5 mt-2 flex gap-2 overflow-x-auto px-5">
             {QUICK_NOTES[type].map((n) => (
@@ -399,7 +394,7 @@ export function TxFormSheet({
           open={sheet === 'treatment'}
           onClose={() => setSheet(null)}
           patientId={patientId}
-          onSaved={(t) => setTreatmentId(t.id)}
+          onSaved={(tr) => setTreatmentId(tr.id)}
         />
       )}
     </Sheet>

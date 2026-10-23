@@ -1,5 +1,6 @@
 import { motion, type HTMLMotionProps } from 'motion/react'
 import { forwardRef, useId, type ReactNode } from 'react'
+import { t } from '@/lib/i18n'
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ')
@@ -73,7 +74,7 @@ export function Spinner({ className }: { className?: string }) {
   return (
     <span
       className={cx('inline-block size-5 animate-spin rounded-full border-2 border-current border-t-transparent', className)}
-      aria-label="در حال بارگذاری"
+      aria-label={t('common.loading')}
     />
   )
 }

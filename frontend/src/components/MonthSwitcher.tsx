@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { currentJMonth, monthLabel, shiftMonth } from '@/lib/jalali'
 import { Pressable } from './ui'
+import { t } from '@/lib/i18n'
 
 export interface JMonthValue {
   jy: number
@@ -27,7 +28,7 @@ export function MonthSwitcher({ value, onShift, dir }: { value: JMonthValue; onS
   const isCurrent = value.jy === now.jy && value.jm === now.jm
   return (
     <div className="flex items-center justify-between rounded-3xl border border-line bg-surface/70 p-1.5 backdrop-blur">
-      <Pressable onClick={() => onShift(-1)} className="grid size-11 place-items-center rounded-2xl bg-surface-2" aria-label="ماه قبل">
+      <Pressable onClick={() => onShift(-1)} className="grid size-11 place-items-center rounded-2xl bg-surface-2" aria-label={t('calendar.prevMonth')}>
         <ChevronRight className="size-5" />
       </Pressable>
       <div className="relative h-11 flex-1 overflow-hidden">
@@ -41,7 +42,7 @@ export function MonthSwitcher({ value, onShift, dir }: { value: JMonthValue; onS
             className="absolute inset-0 flex flex-col items-center justify-center"
           >
             <span className="text-base font-extrabold">{monthLabel(value.jy, value.jm)}</span>
-            {isCurrent && <span className="text-[10px] font-semibold text-brand">ماه جاری</span>}
+            {isCurrent && <span className="text-[10px] font-semibold text-brand">{t('calendar.currentMonth')}</span>}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -49,7 +50,7 @@ export function MonthSwitcher({ value, onShift, dir }: { value: JMonthValue; onS
         onClick={() => onShift(1)}
         disabled={isCurrent}
         className="grid size-11 place-items-center rounded-2xl bg-surface-2 disabled:opacity-30"
-        aria-label="ماه بعد"
+        aria-label={t('calendar.nextMonth')}
       >
         <ChevronLeft className="size-5" />
       </Pressable>

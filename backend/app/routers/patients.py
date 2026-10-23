@@ -29,7 +29,7 @@ SortKey = Literal["balance", "name", "recent"]
 def _patient_or_404(db: Session, patient_id: int) -> Patient:
     patient = db.get(Patient, patient_id)
     if patient is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "بیمار پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "patient_not_found")
     return patient
 
 
@@ -168,7 +168,7 @@ def create_treatment(patient_id: int, body: TreatmentIn, db: DbSession) -> Treat
 def update_treatment(treatment_id: int, body: TreatmentPatch, db: DbSession) -> TreatmentOut:
     treatment = db.get(Treatment, treatment_id)
     if treatment is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "پرونده پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "treatment_not_found")
     for key, value in body.model_dump(exclude_unset=True).items():
         if value is None and key in ("title", "kind", "status"):
             continue
@@ -185,6 +185,6 @@ def delete_treatment(treatment_id: int, db: DbSession) -> None:
     """Removes the case only; its transactions stay on the patient, unassigned."""
     treatment = db.get(Treatment, treatment_id)
     if treatment is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "پرونده پیدا نشد")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "treatment_not_found")
     db.delete(treatment)
     db.commit()

@@ -5,6 +5,7 @@ import { faDigits } from '@/lib/format'
 import {
   addDays,
   formatJ,
+  FRIDAY,
   isoToJ,
   jToIso,
   monthLabel,
@@ -19,6 +20,7 @@ import {
 } from '@/lib/jalali'
 import { Sheet } from './Sheet'
 import { Chip, cx, Pressable, spring } from './ui'
+import { t } from '@/lib/i18n'
 
 function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) => void }) {
   const today = todayIso()
@@ -45,7 +47,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <Pressable onClick={() => go(-1)} className="grid size-10 place-items-center rounded-full bg-surface-2" aria-label="ماه قبل">
+        <Pressable onClick={() => go(-1)} className="grid size-10 place-items-center rounded-full bg-surface-2" aria-label={t('calendar.prevMonth')}>
           <ChevronRight className="size-5" />
         </Pressable>
         <button
@@ -55,7 +57,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
         >
           {mode === 'days' ? monthLabel(view.jy, view.jm) : faDigits(view.jy)}
         </button>
-        <Pressable onClick={() => go(1)} className="grid size-10 place-items-center rounded-full bg-surface-2" aria-label="ماه بعد">
+        <Pressable onClick={() => go(1)} className="grid size-10 place-items-center rounded-full bg-surface-2" aria-label={t('calendar.nextMonth')}>
           <ChevronLeft className="size-5" />
         </Pressable>
       </div>
@@ -85,8 +87,8 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
       ) : (
         <>
           <div className="mb-1 grid grid-cols-7 text-center text-xs font-semibold text-ink-3">
-            {WEEKDAYS.map((w) => (
-              <div key={w} className={cx('py-1', w === 'ج' && 'text-debt/80')}>
+            {WEEKDAYS.map((w, i) => (
+              <div key={w} className={cx('py-1', i === FRIDAY && 'text-debt/80')}>
                 {w}
               </div>
             ))}
@@ -113,7 +115,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
                           ? 'bg-brand-gradient text-white shadow-lg shadow-brand/40'
                           : iso === today
                             ? 'text-brand ring-1 ring-brand/50'
-                            : weekdayIndex(iso) === 6
+                            : weekdayIndex(iso) === FRIDAY
                               ? 'text-debt/80'
                               : 'text-ink',
                       )}
@@ -138,7 +140,7 @@ export function DatePickerSheet({
   value,
   onClose,
   onChange,
-  title = 'انتخاب تاریخ',
+  title = t('calendar.pickDate'),
 }: {
   open: boolean
   value: string
@@ -163,14 +165,14 @@ export function DatePickerSheet({
             onClose()
           }}
         >
-          امروز
+          {t('calendar.today')}
         </Chip>
       </div>
     </Sheet>
   )
 }
 
-/** A date row with «امروز / دیروز» shortcuts; tap to open the Jalali calendar. */
+/** A date row with today / yesterday shortcuts; tap to open the Jalali calendar. */
 export function DateField({
   value,
   onChange,
@@ -193,16 +195,16 @@ export function DateField({
           className="flex h-12 flex-1 items-center gap-3 rounded-2xl border border-line bg-surface-2/70 px-4 text-start"
         >
           <CalendarDays className="size-5 text-brand" />
-          <span className="flex-1 font-semibold text-ink">{value ? formatJ(value) : 'انتخاب کنید'}</span>
+          <span className="flex-1 font-semibold text-ink">{value ? formatJ(value) : t('calendar.choose')}</span>
           {value && <span className="text-xs text-ink-3">{relativeDay(value)}</span>}
         </Pressable>
         {quick && (
           <>
             <Chip active={value === today} onClick={() => onChange(today)}>
-              امروز
+              {t('calendar.today')}
             </Chip>
             <Chip active={value === addDays(today, -1)} onClick={() => onChange(addDays(today, -1))}>
-              دیروز
+              {t('calendar.yesterday')}
             </Chip>
           </>
         )}

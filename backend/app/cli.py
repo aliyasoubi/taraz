@@ -16,6 +16,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.db import SessionLocal
+from app.i18n import t
 from app.models import (
     Account,
     AccountKind,
@@ -94,64 +95,20 @@ def cmd_import_debtors(args: argparse.Namespace) -> int:
     return 0
 
 
-_FIRST = [
-    "سپهر",
-    "آرمان",
-    "کیانا",
-    "ترانه",
-    "بردیا",
-    "شایان",
-    "پرهام",
-    "آوا",
-    "هومن",
-    "رایان",
-    "ستاره",
-    "آرمین",
-    "آرین",
-    "ماهان",
-    "پگاه",
-    "رادین",
-]
-_LAST = ["آسمانی", "صبوری", "روشن‌دل", "کوهستانی", "دریایی", "بهاری", "مهرآیین", "نیک‌نام"]
-
-
 def cmd_seed_demo(_: argparse.Namespace) -> int:
     rng = random.Random(1405)
+    demo = t("demo")
     with SessionLocal() as db:
         if importer.has_transactions(db):
             print("The ledger is not empty; demo data is only seeded into an empty database.")
             return 1
-        accounts = [
-            Account(
-                title="ملت — شخصی",
-                owner_name="خودم",
-                bank="ملت",
-                kind=AccountKind.OWN,
-                card_last4="4821",
-                color="violet",
-            ),
-            Account(
-                title="بلو — منشی",
-                owner_name="منشی",
-                bank="بلو",
-                kind=AccountKind.STAFF,
-                card_last4="1190",
-                color="sky",
-            ),
-            Account(title="کارتخوان تجارت", bank="تجارت", kind=AccountKind.POS, color="emerald"),
-            Account(
-                title="آقای قمی",
-                owner_name="آقای قمی",
-                bank="سامان",
-                kind=AccountKind.THIRD_PARTY,
-                color="amber",
-            ),
-            Account(title="صندوق", kind=AccountKind.CASH, color="rose"),
-        ]
+        accounts = [Account(**{**a, "kind": AccountKind(a["kind"])}) for a in demo["accounts"]]
         db.add_all(accounts)
         db.flush()
         now = today()
-        names = rng.sample([f"{f} {last}" for f in _FIRST for last in _LAST], 18)
+        names = rng.sample(
+            [f"{f} {last}" for f in demo["firstNames"] for last in demo["lastNames"]], 18
+        )
         for name in names:
             p = Patient(
                 name=name, name_search=fold(name), phone=f"0912{rng.randint(1000000, 9999999)}"
@@ -166,29 +123,24 @@ def cmd_seed_demo(_: argparse.Namespace) -> int:
                     TreatmentKind.LAMINATE,
                 ]
             )
-            t = Treatment(
+            case = Treatment(
                 patient_id=p.id,
-                title={
-                    "general": "درمان عمومی",
-                    "implant": "ایمپلنت",
-                    "ortho": "ارتودنسی",
-                    "laminate": "لمینت",
-                }[kind],
+                title=demo["caseTitles"][kind],
                 kind=kind,
-                doctor=rng.choice(["دکتر شاهین", "دکتر افشار", None]),
+                doctor=rng.choice([*demo["doctors"], None]),
             )
-            db.add(t)
+            db.add(case)
             db.flush()
             total = rng.choice([45, 120, 380, 900, 1500, 2600]) * 10_000_000
             start = now - timedelta(days=rng.randint(20, 150))
             db.add(
                 Transaction(
                     patient_id=p.id,
-                    treatment_id=t.id,
+                    treatment_id=case.id,
                     type=TxType.CHARGE,
                     amount=total,
                     occurred_on=start,
-                    description="طرح درمان",
+                    description=demo["planNote"],
                 )
             )
             paid = 0
@@ -202,11 +154,11 @@ def cmd_seed_demo(_: argparse.Namespace) -> int:
                 db.add(
                     Transaction(
                         patient_id=p.id,
-                        treatment_id=t.id,
+                        treatment_id=case.id,
                         type=TxType.PAYMENT,
                         amount=amount,
                         occurred_on=d,
-                        payer_name=rng.choice([None, None, None, "همسر بیمار", "پدر بیمار"]),
+                        payer_name=rng.choice([None, None, None, *demo["payers"]]),
                         account_id=rng.choice(accounts).id,
                         method=PaymentMethod.CHEQUE
                         if cheque
@@ -232,7 +184,7 @@ def main(argv: list[str] | None = None) -> int:
     bak.add_argument("out_dir")
     bak.add_argument("--keep", type=int, default=30, help="how many backups to keep")
     bak.set_defaults(fn=cmd_backup)
-    imp = sub.add_parser("import-debtors", help="import the «لیست بدهکاران» sheet")
+    imp = sub.add_parser("import-debtors", help="import the debtors sheet of the old workbook")
     imp.add_argument("path")
     imp.add_argument("--as-of", help="Jalali date for the opening entries (default: today)")
     imp.add_argument("--dry-run", action="store_true")

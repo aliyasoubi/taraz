@@ -6,6 +6,13 @@ on:
   pull_request:
 
 jobs:
+  text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # UI text lives only in the two locale files; source, tests and docs are English.
+      - run: ./scripts/check-no-persian.sh
+
   backend:
     runs-on: ubuntu-latest
     defaults:
@@ -44,7 +51,7 @@ jobs:
       - run: npm run build
 
   image:
-    needs: [backend, frontend]
+    needs: [text, backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

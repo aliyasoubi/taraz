@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cx } from './ui'
+import { t } from '@/lib/i18n'
 
 let openSheets = 0
 
@@ -107,7 +108,7 @@ export function Sheet({
                     type="button"
                     onClick={onClose}
                     className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-ink-3"
-                    aria-label="بستن"
+                    aria-label={t('common.close')}
                   >
                     <X className="size-4" />
                   </button>
