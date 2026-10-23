@@ -59,3 +59,13 @@ def test_filter_builds_only_the_conditions_given() -> None:
     assert TransactionFilter().conditions() == []
     flt = TransactionFilter(patient_id=1, date_from=date(2026, 1, 1), by_effective_date=True)
     assert len(flt.conditions()) == 2
+
+
+def test_default_static_dir_is_backend_static() -> None:
+    # The Docker image copies the built PWA to /app/static (= backend/static here).
+    from pathlib import Path
+
+    from app.core.config import Settings
+
+    backend = Path(__file__).resolve().parent.parent
+    assert Settings.model_fields["static_dir"].default == backend / "static"

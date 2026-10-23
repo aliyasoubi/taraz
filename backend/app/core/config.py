@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     timezone: str = "Asia/Tehran"
 
     # Built SPA. Absent in development, where Vite serves the frontend.
-    static_dir: Path = Path(__file__).resolve().parent.parent / "static"
+    static_dir: Path = Path(__file__).resolve().parents[2] / "static"
 
     @model_validator(mode="after")
     def _refuse_insecure_production(self) -> "Settings":
