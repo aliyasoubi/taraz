@@ -46,8 +46,8 @@ The source code, comments, tests and docs are English. Every user-facing string
 lives in a locale file:
 
 - `frontend/src/locales/fa.json` — the app's UI, read through `t('section.key')`
-  (`frontend/src/lib/i18n.ts`).
-- `backend/app/i18n/fa.json` — text the backend writes into Excel exports, the
+  (`frontend/src/shared/lib/i18n.ts`).
+- `backend/app/core/i18n/fa.json` — text the backend writes into Excel exports, the
   words the importer matches in the old workbook, and the demo data.
 
 API errors are English codes (`patient_not_found`); the frontend translates them.
@@ -92,7 +92,7 @@ cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv
 ```
 
 ```bash
-cd frontend && npm run lint && npm run typecheck && npm test && npm run build
+cd frontend && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 ```bash
@@ -129,24 +129,61 @@ See [ops/README.md](ops/README.md). In short: on the VPS that runs patient-book,
 clone into `/opt/taraz`, fill in `.env`, run `docker compose up -d --build`, and
 add a site block to patient-book's Caddy.
 
-## Layout
+## Architecture
+
+### Backend — layered
 
 ```
-backend/
-  app/
-    models.py        tables: patient, treatment case, destination account, transaction
-    services/        balance arithmetic (ledger), monthly report, Excel export/import
-    routers/         API: auth, patients, transactions, accounts, reports
-    i18n/            backend locale file (fa.json)
-    cli.py           hash-password, backup, import-debtors, seed-demo
-  alembic/           database migrations
-  tests/
-frontend/
-  src/
-    pages/           home, patients, patient ledger, accounts, reports, cheques, settings
-    components/      sheets, transaction form, receipt, amount input, Jalali calendar …
-    lib/             API client, rial/toman formatting, Jalali dates, i18n
-    locales/         fa.json — every UI string
+backend/app/
+  main.py            composition root: builds the app from the parts below
+  api/               HTTP only — thin routes, dependencies, error mapping, middleware, SPA serving
+    routes/          one module per resource; parse input, call a service, return a schema
+    deps.py          DbSession, SettingsDep, require_user (the only FastAPI ↔ core glue)
+    errors.py        domain errors → 404 / 409 / 422
+  services/          business logic and queries; know nothing about HTTP
+    ledger.py        the single definition of a balance (signed amounts, cheque rules)
+    patients.py  accounts.py  transactions.py  reports.py
+    export.py  importer.py  backup.py  demo.py
+  schemas/           Pydantic request/response models, one module per resource
+  models.py          SQLAlchemy tables
+  core/              config, database, security, domain errors, i18n (no FastAPI imports)
+  utils/             Jalali calendar, Persian text folding, PATCH helper
+  cli.py             admin commands; delegates to services
+```
+
+Dependencies point inwards: `api → services → models/core/utils`. Services raise
+`NotFoundError` / `ConflictError` / `InvalidError` with an English code; only
+`api/errors.py` knows the HTTP status for each.
+
+### Frontend — by feature
+
+```
+frontend/src/
+  main.tsx           entry: query client, router, toaster, service worker
+  app/               shell: App (routes + auth gate), TabBar, global styles
+  features/          one folder per domain; each owns its pages, components and data hooks
+    auth/  dashboard/  patients/  accounts/  transactions/  reports/  settings/
+      api.ts         TanStack Query hooks for that domain
+      *Page.tsx      route screens, composed from components/
+      components/    UI used by that feature
+    patients/ledger.ts            running balance + month grouping (pure, tested)
+    transactions/form/model.ts    transaction form state and rules (pure, tested)
+    transactions/form/*Section    one component per form section
+  shared/
+    api/             fetch client, API types, query keys + cache invalidation
+    lib/             formatting, Jalali dates, i18n, settings, labels, text folding
+    ui/              design system: Button, Sheet, Money, AmountInput, DatePicker … (index.ts)
+  locales/fa.json    every UI string
+```
+
+Features may use `shared/` and another feature's public `api.ts` or
+components; `shared/` never imports from `features/`. Logic that can be a pure
+function lives next to the feature in a `.ts` file with a test beside it.
+
+### Other folders
+
+```
 ops/                 deploy.sh, backup.sh, systemd timer, Caddy site block
 scripts/             check-no-persian.sh
+.github/workflows/   CI (text, backend, frontend, image) and manual deploy
 ```
