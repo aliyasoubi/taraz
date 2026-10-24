@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -36,13 +37,25 @@ def _make_engine(url: str) -> Engine:
     return engine
 
 
-engine = _make_engine(get_settings().database_url)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+@cache
+def get_engine() -> Engine:
+    """Created on first use, not at import: importing a model must not need configuration
+    (e.g. `hash-password` runs before production settings exist)."""
+    return _make_engine(get_settings().database_url)
+
+
+@cache
+def _session_factory() -> sessionmaker[Session]:
+    return sessionmaker(bind=get_engine(), autoflush=False, expire_on_commit=False)
+
+
+def new_session() -> Session:
+    return _session_factory()()
 
 
 def get_db() -> Iterator[Session]:
     """One session per request; FastAPI wires it up in app/api/deps.py."""
-    db = SessionLocal()
+    db = new_session()
     try:
         yield db
     finally:

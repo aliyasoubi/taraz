@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from app.core.config import get_settings
-from app.core.db import SessionLocal
+from app.core.db import new_session
 from app.core.errors import ConflictError, InvalidError
 from app.core.security import hash_password
 from app.services.backup import backup_sqlite, sqlite_path
@@ -72,7 +72,7 @@ def cmd_import_workbook(args: argparse.Namespace) -> int:
         for error in result.errors[:50]:
             print(f"  {error}", file=sys.stderr)
         return 1
-    with SessionLocal() as db:
+    with new_session() as db:
         try:
             summary = import_book(db, result.book, dry_run=args.dry_run, force=args.force)
         except ConflictError:
@@ -91,7 +91,7 @@ def cmd_import_workbook(args: argparse.Namespace) -> int:
 
 
 def cmd_seed_demo(_: argparse.Namespace) -> int:
-    with SessionLocal() as db:
+    with new_session() as db:
         try:
             seed_demo(db)
         except ConflictError:

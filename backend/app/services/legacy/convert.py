@@ -102,7 +102,9 @@ class _Converter:
                 bank_cells.extend(row[3:7])
         self.accounts.learn_doctors(bank_cells)
 
-        months = sorted((self._sheet_month(ws), ws) for ws in month_sheets if self._sheet_month(ws))
+        dated = [(month, ws) for ws in month_sheets if (month := self._sheet_month(ws))]
+        # By month only: two sheets of the same month must not be compared as worksheets.
+        months = sorted(dated, key=lambda pair: pair[0])
         for index, (month, ws) in enumerate(months):
             self._read_rows(ws, index, month, cols=(0, 1, 2, 3, 4, 5))
         if ortho := sheets.get(t("legacy.orthoSheet")):
@@ -252,12 +254,18 @@ class _Converter:
                 flags.append(t("legacy.issues.ambiguousAmount", raw=amount.raw, fixed=amount.value))
             if amount.tiny:
                 flags.append(t("legacy.issues.tinyAmount", raw=amount.value))
+            if amount.negative:
+                flags.append(
+                    t("legacy.issues.negativeAmount", raw=-(amount.value or 0), fixed=amount.value)
+                )
         if row.payment.value is None and row.payment.text and not paid_by_cheque:
             flags.append(t("legacy.issues.unknownPayment", raw=row.payment.raw))
         if known is None and row.balance.text and not sold and not deposit:
             flags.append(t("legacy.issues.unknownBalance", raw=row.balance.raw))
         if delta < 0 and not paid_by_cheque:
             flags.append(t("legacy.issues.balanceDrop", amount=-delta))
+        if (paid and dest.method == PaymentMethod.CHEQUE) or paid_by_cheque:
+            flags.append(t("legacy.issues.chequeAssumedCleared"))
         for text in flags:
             self.issue(row.source, name.display, text)
         common: dict[str, Any] = {
