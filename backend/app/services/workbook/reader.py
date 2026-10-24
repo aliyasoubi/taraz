@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from openpyxl import load_workbook
 
@@ -39,8 +39,8 @@ def _columns(header: tuple[Any, ...], expected: list[str], sheet: str) -> dict[s
     return {h: found[fold(h)] for h in expected}
 
 
-def read_book(path: Path) -> ReadResult:
-    wb = load_workbook(path, data_only=True, read_only=True)
+def read_book(source: Path | IO[bytes]) -> ReadResult:
+    wb = load_workbook(source, data_only=True, read_only=True)
     names = t("workbook.sheets")
     result = ReadResult(StandardBook())
     _read_accounts(wb[names["accounts"]], result)

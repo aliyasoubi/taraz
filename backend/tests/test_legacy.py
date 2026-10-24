@@ -249,3 +249,17 @@ def test_cli_imports_without_production_settings() -> None:
         cwd=Path(__file__).resolve().parent.parent,
     )
     assert cli_only.returncode == 0, cli_only.stderr
+
+
+def test_cli_reads_the_workbook_from_stdin(book, api: Api, monkeypatch, capsys) -> None:  # type: ignore[no-untyped-def]
+    """The production container is read-only, so the file is piped in, not copied."""
+    import io
+    import sys
+
+    from app.cli import main
+
+    stdin = io.TextIOWrapper(io.BytesIO(write_book(book)))
+    monkeypatch.setattr(sys, "stdin", stdin)
+    assert main(["import-workbook", "-", "--dry-run"]) == 0
+    assert "[dry run, nothing saved]" in capsys.readouterr().out
+    assert api.c.get("/api/patients").json() == []

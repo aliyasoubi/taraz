@@ -125,20 +125,19 @@ workbook" in the main README), then copy it up and import:
 scp backend/data/import/taraz-standard.xlsx <user>@<vps>:/tmp/taraz-standard.xlsx
 ```
 
+The container's filesystem is read-only, so the file is piped in (`-` reads
+stdin) rather than copied:
+
 ```bash
-cd /opt/taraz && docker compose cp /tmp/taraz-standard.xlsx taraz:/tmp/standard.xlsx
+cd /opt/taraz && docker compose exec -T taraz python -m app.cli import-workbook - --dry-run < /tmp/taraz-standard.xlsx
 ```
 
 ```bash
-docker compose exec taraz python -m app.cli import-workbook /tmp/standard.xlsx --dry-run
+docker compose exec -T taraz python -m app.cli import-workbook - < /tmp/taraz-standard.xlsx
 ```
 
 ```bash
-docker compose exec taraz python -m app.cli import-workbook /tmp/standard.xlsx
-```
-
-```bash
-rm /tmp/taraz-standard.xlsx && docker compose exec taraz rm /tmp/standard.xlsx
+rm /tmp/taraz-standard.xlsx
 ```
 
 The import is all-or-nothing and refuses to run into a ledger that already has

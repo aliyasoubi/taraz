@@ -3,13 +3,14 @@
 python -m app.cli hash-password
 python -m app.cli backup /data/backups [--keep 30]
 python -m app.cli standardize-legacy old.xlsx standard.xlsx [--as-of 1405-08-01]
-python -m app.cli import-workbook standard.xlsx [--dry-run]
+python -m app.cli import-workbook standard.xlsx [--dry-run]   # or `-` to read stdin
 python -m app.cli seed-demo        # fake data, for trying the UI
 """
 
 import argparse
 import getpass
 import sys
+from io import BytesIO
 from pathlib import Path
 
 from app.core.config import get_settings
@@ -66,7 +67,10 @@ def cmd_standardize_legacy(args: argparse.Namespace) -> int:
 
 
 def cmd_import_workbook(args: argparse.Namespace) -> int:
-    result = read_book(Path(args.path))
+    # `-` reads stdin, so the file can be piped into the read-only container:
+    # docker compose exec -T taraz python -m app.cli import-workbook - < standard.xlsx
+    source = BytesIO(sys.stdin.buffer.read()) if args.path == "-" else Path(args.path)
+    result = read_book(source)
     if result.errors:
         print(f"{len(result.errors)} invalid rows; nothing imported:", file=sys.stderr)
         for error in result.errors[:50]:
@@ -122,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     std.set_defaults(fn=cmd_standardize_legacy)
     imp = sub.add_parser("import-workbook", help="load a reviewed standard workbook")
-    imp.add_argument("path")
+    imp.add_argument("path", help="the .xlsx file, or - for stdin")
     imp.add_argument("--dry-run", action="store_true", help="check and summarize, save nothing")
     imp.add_argument("--force", action="store_true", help="import even if the ledger is not empty")
     imp.set_defaults(fn=cmd_import_workbook)
