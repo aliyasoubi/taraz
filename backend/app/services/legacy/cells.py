@@ -39,6 +39,8 @@ class Amount:
     ambiguous: bool = False
     # Far below any real fee (a balance of 9 rials): almost surely a typo.
     tiny: bool = False
+    # Written with a minus sign; the value is kept positive and flagged.
+    negative: bool = False
 
     @property
     def raw(self) -> str:
@@ -54,7 +56,7 @@ def parse_amount(cell: object) -> Amount:
         return Amount()
     if isinstance(cell, int | float):
         value = abs(int(cell))
-        return Amount(value=value, tiny=0 < value < TINY_RIALS)
+        return Amount(value=value, tiny=0 < value < TINY_RIALS, negative=cell < 0)
     text = ascii_digits(str(cell)).replace("\u066c", ",").strip()
     compact = text.replace(" ", "")
     if re.fullmatch(r"[\d,]+", compact) and any(c.isdigit() for c in compact):
@@ -110,25 +112,25 @@ def parse_date(
         return fixed(None, "missingDate" if not raw else "badDate")
     y, m = parts[0], parts[1]
     d = parts[2] if len(parts) > 2 else None
-    if y > 1500:  # 1705 → 1405
-        y = 1400 + y % 100
-    if m > 12:  # "067" → 7, "024" → 24 handled below for days
-        m = m % 10 or m // 10
-    if d is not None and d > 31:
-        d = d % 100 if d % 100 <= 31 else None
+    repaired = False
+    if y > 1500:  # "1705" for 1405: a slipped digit in the century
+        y, repaired = 1400 + y % 100, True
+    if d is not None and d > 31 and d % 100 <= 31:  # "024" for 24
+        d, repaired = d % 100, True
     if sheet_month and (y, m) != sheet_month:
+        # A monthly sheet's rows belong to its month; keep the day if it is a real one.
         if d is not None and (on := _jalali(*sheet_month, d)):
             return fixed(on, "dateOutsideSheet")
         return fixed(None, "dateOutsideSheet")
-    if d is None:
-        return fixed(None, "badDate")
+    if d is None or m > 12:
+        return fixed(None, "badDate")  # never guess a month
     on = _jalali(y, m, d)
     if on is None:
         return fixed(None, "badDate")
     clean = isinstance(cell, str) and re.fullmatch(r"\d{4}[-/]\d{2}[-/]\d{2}", ascii_digits(raw))
-    return ParsedDate(
-        on, None if clean else t("legacy.issues.badDate", raw=raw, fixed=jalali_text(on))
-    )
+    if clean and not repaired:
+        return ParsedDate(on)
+    return ParsedDate(on, t("legacy.issues.badDate", raw=raw, fixed=jalali_text(on)))
 
 
 # ── Names ────────────────────────────────────────────────────────────────────

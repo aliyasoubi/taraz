@@ -24,7 +24,7 @@ from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
-from app.core.db import Base, engine  # noqa: E402
+from app.core.db import Base, get_engine  # noqa: E402
 from app.core.security import login_throttle  # noqa: E402
 from app.main import create_app  # noqa: E402
 
@@ -40,7 +40,7 @@ def _schema() -> None:
 @pytest.fixture(autouse=True)
 def _clean() -> Iterator[None]:
     yield
-    with engine.begin() as conn:
+    with get_engine().begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             conn.execute(text(f"DELETE FROM {table.name}"))
     login_throttle._failures.clear()

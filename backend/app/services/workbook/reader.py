@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from openpyxl import load_workbook
 
@@ -14,6 +14,10 @@ from app.services.legacy.cells import parse_amount, parse_date, text_of
 from app.services.workbook.model import AccountEntry, Line, PatientEntry, StandardBook
 from app.services.workbook.writer import label
 from app.utils.text import fold
+
+# The same limits as the database columns and the API, so an imported row can
+# later be edited in the app.
+_LIMITS = {"patient": 120, "payer": 120, "account": 80, "doctor": 80, "description": 300}
 
 
 @dataclass
@@ -35,8 +39,8 @@ def _columns(header: tuple[Any, ...], expected: list[str], sheet: str) -> dict[s
     return {h: found[fold(h)] for h in expected}
 
 
-def read_book(path: Path) -> ReadResult:
-    wb = load_workbook(path, data_only=True, read_only=True)
+def read_book(source: Path | IO[bytes]) -> ReadResult:
+    wb = load_workbook(source, data_only=True, read_only=True)
     names = t("workbook.sheets")
     result = ReadResult(StandardBook())
     _read_accounts(wb[names["accounts"]], result)
@@ -102,7 +106,8 @@ def _read_lines(ws: Any, result: ReadResult) -> None:
         problems: list[str] = []
         parsed_on = parse_date(row[on], None, None)
         tx_type = _choice("tx", TxType, text_of(row[kind]))
-        value = parse_amount(row[amount]).value
+        parsed_amount = parse_amount(row[amount])
+        value = parsed_amount.value
         due_on: date | None = None
         if text_of(row[due]):
             due_on = parse_date(row[due], None, None).on
@@ -127,8 +132,19 @@ def _read_lines(ws: Any, result: ReadResult) -> None:
             problems.append("date")
         if tx_type is None:
             problems.append("type")
-        if not value:
+        if not value or parsed_amount.negative:
             problems.append("amount")
+        texts = {
+            "patient": text_of(row[patient]),
+            "payer": text_of(row[payer]),
+            "account": text_of(row[account]),
+            "doctor": text_of(row[doctor]),
+            # The importer appends the doctor to the description.
+            "description": " — ".join(x for x in (text_of(row[note]), text_of(row[doctor])) if x),
+        }
+        problems.extend(
+            f"{field} too long" for field, text in texts.items() if len(text) > _LIMITS[field]
+        )
         if not text_of(row[patient]):
             problems.append("patient")
         if problems:

@@ -115,8 +115,8 @@ class Accounts:
             dest.method = PaymentMethod.CURRENCY
             dest.notes.append(part)
             return
-        pos = any(key.startswith(w) or f" {w}" in f" {key}" for w in self._pos)
-        if not pos and any(w in key for w in self._notes):
+        pos = any(self._is_pos_word(word) for word in key.split())
+        if not pos and any(self._note_pattern(w).search(key) for w in self._notes):
             dest.notes.append(part)
             return
         if dest.account is not None:  # a second account in one cell stays a note
@@ -168,11 +168,23 @@ class Accounts:
         )
         return _Account(person, kind, None, person)
 
+    @staticmethod
+    def _note_pattern(word: str) -> re.Pattern[str]:
+        """A note keyword at the start of a word; short ones must be the whole word
+        (the two-letter word for "jaw" must not swallow a surname that starts with it)."""
+        end = r"(?=\s|$)" if len(word) <= 2 else ""
+        return re.compile(rf"(^|\s){re.escape(word)}{end}")
+
+    def _is_pos_word(self, word: str) -> bool:
+        """'pos', 'pis', the Persian words, or 'posSepah' glued — but not a word that merely
+        starts with the Persian letters (e.g. "physician")."""
+        return any(word == w or (w.isascii() and word.startswith(w)) for w in self._pos)
+
     def _unglue_pos(self, word: str) -> list[str]:
         """ "posSepah" → ["pos", "Sepah"]: the terminal word is often typed without a space."""
         key = fold(word)
         for pos in self._pos:
-            if key.startswith(pos) and len(key) > len(pos):
+            if pos.isascii() and key.startswith(pos) and len(key) > len(pos):
                 return [word[: len(pos)], word[len(pos) :]]
         return [word]
 

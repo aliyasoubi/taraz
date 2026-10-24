@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from itertools import cycle
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError
@@ -28,6 +29,10 @@ class ImportSummary:
     pending_cheques: int
 
 
+def _account_key(title: str) -> str:
+    return fold(title).replace(" ", "")
+
+
 class _Importer:
     def __init__(self, db: Session, book: StandardBook) -> None:
         self.db = db
@@ -37,11 +42,18 @@ class _Importer:
         self.accounts: dict[str, Account] = {}
         self.cases: dict[tuple[int, TreatmentKind], Treatment] = {}
         self.colors = cycle(_CARD_COLORS)
+        # With --force the ledger already has rows: reuse its patients and accounts.
+        for patient in db.scalars(select(Patient)):
+            self.patients.setdefault(name_key(patient.name), patient)
+        for account in db.scalars(select(Account)):
+            self.accounts.setdefault(_account_key(account.title), account)
+        for treatment in db.scalars(select(Treatment)):
+            self.cases.setdefault((treatment.patient_id, treatment.kind), treatment)
 
     def account(
         self, title: str, kind: AccountKind = AccountKind.OTHER, **extra: str | None
     ) -> Account:
-        key = fold(title).replace(" ", "")
+        key = _account_key(title)
         if key not in self.accounts:
             account = Account(title=tidy(title), kind=kind, color=next(self.colors), **extra)
             self.db.add(account)
@@ -93,15 +105,15 @@ class _Importer:
             self.db.add(tx)
         self.db.flush()
 
-        balances = [totals.balance for totals in ledger.patient_totals(self.db).values()]
+        totals = list(ledger.patient_totals(self.db).values())
         return ImportSummary(
             patients=len(self.patients),
             accounts=len(self.accounts),
             treatments=len(self.cases),
             transactions=len(self.book.lines),
-            receivable=sum(b for b in balances if b > 0),
-            credit=-sum(b for b in balances if b < 0),
-            pending_cheques=sum(t.pending_cheques for t in ledger.patient_totals(self.db).values()),
+            receivable=sum(x.balance for x in totals if x.balance > 0),
+            credit=-sum(x.balance for x in totals if x.balance < 0),
+            pending_cheques=sum(x.pending_cheques for x in totals),
         )
 
 

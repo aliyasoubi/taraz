@@ -27,8 +27,11 @@ services:
     environment:
       ENV: production
       DATABASE_URL: sqlite:////data/taraz.db
-      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env}
-      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      # Not required here so the image can be built before the password hash exists
+      # (hash-password runs inside it). The app itself refuses to start in
+      # production without a valid argon2 hash and a long SECRET_KEY.
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:-}
+      SECRET_KEY: ${SECRET_KEY:-}
       SESSION_DAYS: ${SESSION_DAYS:-30}
       TIMEZONE: ${TIMEZONE:-Asia/Tehran}
     volumes:
