@@ -1,0 +1,21 @@
+# Taraz behind patient-book's Caddy. Rendered by ops/deploy.sh into
+# /opt/caddy/sites/taraz.caddy (TARAZ_DOMAIN from .env), which patient-book's
+# Caddyfile imports. Caddy obtains and renews the certificate on its own.
+${TARAZ_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# JSON and the reviewed Excel file only.
+	request_body {
+		max_size 5MB
+	}
+
+	# Taraz sets its own CSP, cache and security headers.
+	reverse_proxy taraz:8000 {
+		health_uri /api/health
+	}
+}

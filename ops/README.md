@@ -1,69 +1,167 @@
-# Deploying Taraz next to patient-book
+# Deploying Taraz beside patient-book (taraz.dentixo.ir)
 
-One container, no published ports. patient-book's Caddy already terminates TLS
-on 80/443; Taraz joins its Docker network and Caddy proxies a subdomain to it.
+Taraz runs as its own Docker Compose project on the same VPS. patient-book's
+Caddy, which already owns ports 80/443 for `dentixo.ir`, also serves
+`taraz.dentixo.ir` and forwards it to the Taraz container.
 
 ```
-                 :443
- iPhone ──► Caddy (patient-book `web`) ──┬── dentixo domain ──► patient-book
-                                         └── TARAZ_DOMAIN   ──► taraz:8000 ──► /data/taraz.db
+                   :443
+ iPhone ──► Caddy (patient-book `web`) ──┬── dentixo.ir        ──► patient-book (unchanged)
+                                         └── taraz.dentixo.ir  ──► taraz:8000 ──► /data/taraz.db
 ```
 
-Why not Vercel: the ledger is medical-financial data for one person. On the VPS
-it stays on a server you control, next to the app it belongs with, with no
-third-party database, no cold starts, and no dependency on a US platform that
-may be blocked or sanction-restricted from Iran. SQLite in a volume is enough
-for a single user and backs up as one file.
+What keeps patient-book safe:
 
-## First deploy
+- **Separate project.** `/opt/taraz` is compose project `taraz`. Its commands
+  (`up`, `down`, `--remove-orphans`, image prune) never touch patient-book's
+  containers, volumes or database.
+- **No restarts after day one.** Taraz publishes its site as a file that
+  patient-book's Caddy imports, then asks Caddy to *reload*. A reload validates
+  the new config first and swaps it in without dropping connections; an invalid
+  file is rejected and the old config keeps running. (Rehearsed: 88 requests to
+  patient-book during a reload, 0 failed; a broken site file was refused and
+  both apps kept serving.)
+- **Resource caps.** The Taraz container is limited to 1 CPU, 384 MB and 200
+  processes, read-only, no capabilities.
+- **Own data and backups.** SQLite in the `taraz_data` volume; backups go to
+  `/var/backups/taraz`.
 
-1. DNS: an A record for the subdomain (e.g. `taraz.example.ir`) pointing at the VPS.
+Why not Vercel: the ledger is medical-financial data; here it stays on your
+server, next to patient-book, with no third-party database and no dependency on
+a platform that can be blocked from Iran.
 
-2. Code and secrets:
+---
 
-   ```bash
-   git clone git@github.com:<you>/<repo>.git /opt/taraz && cd /opt/taraz
-   cp .env.production.example .env && chmod 600 .env
-   openssl rand -base64 48   # → SECRET_KEY in .env
-   docker compose build
-   docker compose run --rm --no-deps taraz python -m app.cli hash-password
-   ```
+## 1. DNS (any time before step 4)
 
-   Paste the printed `AUTH_PASSWORD_HASH='…'` line into `.env` (keep the quotes).
-   If the build cannot reach Docker Hub or PyPI, set the mirror variables at the
-   bottom of `.env` first.
+Add an **A record**: `taraz` → the VPS's IP (the same IP `dentixo.ir` uses).
+Caddy requests the certificate on the first visit and renews it on its own.
 
-3. Start it (patient-book must already be running, so its network exists):
+## 2. One-time change in patient-book (the only time it restarts)
 
-   ```bash
-   docker compose up -d
-   docker compose ps   # wait for "healthy"
-   ```
+Two small edits in the patient-book repository, shipped with its normal deploy.
+Pick a quiet moment: recreating the `web` container interrupts it for a few
+seconds; certificates are kept in its volume.
 
-4. Caddy, in the patient-book repo: append [`Caddyfile.snippet`](Caddyfile.snippet)
-   to `ops/deploy/Caddyfile`, add `TARAZ_DOMAIN: ${TARAZ_DOMAIN:?…}` to the `web`
-   service's environment in `compose.prod.yml`, set `TARAZ_DOMAIN` in its `.env`,
-   and redeploy patient-book. Caddy obtains the certificate on first request.
+`ops/deploy/Caddyfile` — at the very end:
 
-5. On the iPhone: open the subdomain in Safari → Share → **Add to Home Screen**.
+```caddyfile
+# Other apps on this VPS (e.g. Taraz) drop their site files here.
+import /etc/caddy/sites/*.caddy
+```
+
+`compose.prod.yml` — service `web`, under `volumes:`:
+
+```yaml
+      # Site files of other apps on this VPS (Taraz). Read-only for Caddy.
+      - /opt/caddy/sites:/etc/caddy/sites:ro
+```
+
+Then on the VPS:
+
+```bash
+sudo mkdir -p /opt/caddy/sites
+```
+
+```bash
+cd /opt/patient-book && ./ops/deploy/deploy.sh
+```
+
+An empty `/opt/caddy/sites` is valid; patient-book behaves exactly as before.
+
+## 3. Install Taraz
+
+```bash
+sudo git clone https://github.com/aliyasoubi/taraz.git /opt/taraz && cd /opt/taraz
+```
+
+```bash
+cp .env.production.example .env && chmod 600 .env
+```
+
+Fill in `.env`:
+
+- `TARAZ_DOMAIN=taraz.dentixo.ir` (already set)
+- `SECRET_KEY` — `openssl rand -base64 48`
+- `AUTH_PASSWORD_HASH` — after the first build:
+
+```bash
+docker compose build
+```
+
+```bash
+docker compose run --rm --no-deps taraz python -m app.cli hash-password
+```
+
+  Paste the printed line into `.env`, keeping the single quotes.
+
+If the VPS cannot reach Docker Hub or PyPI, uncomment the mirror lines at the
+bottom of `.env` (ArvanCloud for images, Runflare for PyPI).
+
+## 4. Go live
+
+```bash
+./ops/deploy.sh
+```
+
+It builds and starts Taraz, waits until it is healthy, writes
+`/opt/caddy/sites/taraz.caddy` from `ops/caddy/site.caddy.template`, reloads
+patient-book's Caddy, and checks `https://taraz.dentixo.ir`.
+
+On the iPhone: open `https://taraz.dentixo.ir` in Safari → Share → **Add to Home Screen**.
+
+## 5. Move the old workbook in
+
+On your Mac, from `backend/` (the old workbook never needs to reach the server):
+
+```bash
+.venv/bin/python -m app.cli standardize-legacy /path/to/old-workbook.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
+```
+
+Review `data/import/taraz-standard.xlsx` (see "Reviewing the standard
+workbook" in the main README), then copy it up and import:
+
+```bash
+scp backend/data/import/taraz-standard.xlsx <user>@<vps>:/tmp/taraz-standard.xlsx
+```
+
+```bash
+cd /opt/taraz && docker compose cp /tmp/taraz-standard.xlsx taraz:/tmp/standard.xlsx
+```
+
+```bash
+docker compose exec taraz python -m app.cli import-workbook /tmp/standard.xlsx --dry-run
+```
+
+```bash
+docker compose exec taraz python -m app.cli import-workbook /tmp/standard.xlsx
+```
+
+```bash
+rm /tmp/taraz-standard.xlsx && docker compose exec taraz rm /tmp/standard.xlsx
+```
+
+The import is all-or-nothing and refuses to run into a ledger that already has
+transactions. To redo it, restore the pre-import backup (below) or wipe the
+fresh ledger with `docker compose down -v` before anyone has entered real data.
 
 ## Backups
 
-`ops/backup.sh` takes a consistent SQLite snapshot (online backup API, safe while
-the app is running) into the volume, keeping 30, and copies it to
-`/var/backups/taraz` on the host, keeping 90 days. `deploy.sh` runs it before
-every upgrade. Schedule it daily:
+`ops/backup.sh` takes a consistent SQLite snapshot (safe while running) into the
+volume, keeping 30, and copies it to `/var/backups/taraz`, keeping 90 days.
+`deploy.sh` runs it before every upgrade. Schedule it daily:
 
 ```bash
 sudo cp ops/taraz-backup.service ops/taraz-backup.timer /etc/systemd/system/
+```
+
+```bash
 sudo systemctl daemon-reload && sudo systemctl enable --now taraz-backup.timer
 ```
 
-Copy `/var/backups/taraz` off the server too (the same place patient-book's
-backups go). Restore = stop the container, copy a snapshot over
-`/data/taraz.db` in the volume, start it.
-
-The app's Settings → "full backup (Excel)" also downloads every row as a workbook.
+Copy `/var/backups/taraz` off the server with patient-book's backups. Restore:
+stop the container, copy a snapshot over `/data/taraz.db` in the volume, start it.
+Settings → "full backup (Excel)" in the app also downloads every row.
 
 ## Updates
 
@@ -71,27 +169,26 @@ The app's Settings → "full backup (Excel)" also downloads every row as a workb
 cd /opt/taraz && ./ops/deploy.sh
 ```
 
-Or from GitHub: Actions → Deploy → Run workflow. That needs secrets
-`TARAZ_DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, and on the VPS an
-`authorized_keys` entry that pins the key to one command:
+Or GitHub → Actions → Deploy. That needs secrets `TARAZ_DEPLOY_SSH_KEY`,
+`DEPLOY_HOST`, `DEPLOY_USER`, and an `authorized_keys` line on the VPS that pins
+the key to one command:
 
 ```
 command="cd /opt/taraz && ./ops/deploy.sh",no-port-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA… taraz-deploy
 ```
 
-## Running it without patient-book
+## Taking Taraz offline (patient-book unaffected)
 
-Give it its own port instead of the external network, e.g. a
-`compose.override.yml`:
-
-```yaml
-services:
-  taraz:
-    ports: ["127.0.0.1:8010:8000"]
-    networks: !reset [default]
-networks:
-  proxy: !reset null
+```bash
+sudo rm /opt/caddy/sites/taraz.caddy
 ```
 
-and put any TLS-terminating proxy in front of `127.0.0.1:8010`. Never expose it
-over plain HTTP: the session cookie is `Secure`.
+```bash
+docker exec "$(docker compose -p patient-book ps -q web)" caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+```
+
+```bash
+cd /opt/taraz && docker compose down
+```
+
+(`down` without `-v` keeps the data volume.)

@@ -102,32 +102,59 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, and
 builds the Docker image.
 
-## Importing balances from the old workbook
+## Moving the old workbook in
 
-The debtors sheet can be imported once as opening balances. Each row becomes a
-charge noted as carried over from Excel; cheque rows also create a pending
-cheque for the same amount and due date. Rows ending in `imp` / ortho go to the
-patient's implant / orthodontics case.
+Two steps, with your review in between:
 
-```bash
-.venv/bin/python -m app.cli import-debtors /path/to/workbook.xlsx --as-of 1405-08-01 --dry-run
-.venv/bin/python -m app.cli import-debtors /path/to/workbook.xlsx --as-of 1405-08-01
-```
+1. **Standardize** the old workbook into a clean, reviewable Excel file:
 
-Run it with `--dry-run` first. When a patient has both a plain balance row and
-cheque rows, the row numbers are printed for review: the workbook does not say
-whether the cheques cover that balance or come on top of it. On the server:
+   ```bash
+   .venv/bin/python -m app.cli standardize-legacy old.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
+   ```
 
-```bash
-docker compose cp /path/to/workbook.xlsx taraz:/tmp/old.xlsx
-docker compose exec taraz python -m app.cli import-debtors /tmp/old.xlsx --as-of 1405-08-01 --dry-run
-```
+   It reads every month sheet, the orthodontics sheet and the debtors list, and
+   rebuilds a proper ledger. The old sheets recorded only the balance after
+   each payment, so treatment costs are reconstructed from how the balance
+   moves. Payments keep their source (who paid) and destination (which
+   account). About 160 spellings in the "bank-account" column are collapsed
+   into real accounts, and doctors, payers and notes in that column are
+   separated out. Each patient's final balance is aligned to the debtors list,
+   whose cheques become pending cheques. `data/import/` is gitignored: the
+   file holds real patient data.
+
+2. **Import** the reviewed file. All or nothing, and refused if the ledger
+   already has transactions:
+
+   ```bash
+   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
+   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx
+   ```
+
+### Reviewing the standard workbook
+
+- **Transactions:** one row per charge, payment, discount or cheque. "Source"
+  points to the sheet and row of the old file. Rows needing a look are
+  highlighted, with the reason in the last column. Type, case, method and
+  cheque status are dropdowns.
+- **Patients:** the name used, the other spellings found, and possible
+  duplicates. To merge two patients, write the right name in "merge into".
+- **Accounts:** canonical title, bank, owner and kind. Fix titles here and in
+  the transactions that use them.
+- **Issues:** everything ambiguous (unclear amounts and dates, balance drops
+  without a payment, patients missing from the debtors list), and what was
+  done about each.
+
+Patients with a balance in the monthly sheets but **not on the debtors list**
+are kept and flagged by default. If the debtors list is complete, add
+`--settle-unlisted` to the standardize command to close those balances
+instead (one flagged adjustment each).
 
 ## Deployment
 
 See [ops/README.md](ops/README.md). In short: on the VPS that runs patient-book,
 clone into `/opt/taraz`, fill in `.env`, run `docker compose up -d --build`, and
-add a site block to patient-book's Caddy.
+add a one-line `import` to patient-book's Caddy, after which Taraz publishes and
+reloads its own site (`taraz.dentixo.ir`) without restarting patient-book.
 
 ## Architecture
 
@@ -143,7 +170,9 @@ backend/app/
   services/          business logic and queries; know nothing about HTTP
     ledger.py        the single definition of a balance (signed amounts, cheque rules)
     patients.py  accounts.py  transactions.py  reports.py
-    export.py  importer.py  backup.py  demo.py
+    export.py  backup.py  demo.py
+    legacy/          old workbook → standard workbook (cells, accounts, ledger rebuild)
+    workbook/        standard workbook model, Excel writer/reader, database importer
   schemas/           Pydantic request/response models, one module per resource
   models.py          SQLAlchemy tables
   core/              config, database, security, domain errors, i18n (no FastAPI imports)

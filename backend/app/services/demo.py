@@ -19,7 +19,7 @@ from app.models import (
     TreatmentKind,
     TxType,
 )
-from app.services.importer import has_transactions
+from app.services.transactions import has_transactions
 from app.utils.jalali import today
 from app.utils.text import fold
 

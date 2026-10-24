@@ -107,6 +107,10 @@ def tx_to_out(tx: Transaction) -> TransactionOut:
     )
 
 
+def has_transactions(db: Session) -> bool:
+    return bool(db.scalar(select(func.count(Transaction.id))))
+
+
 def get_transaction(db: Session, tx_id: int) -> Transaction:
     tx = db.scalars(tx_select().where(Transaction.id == tx_id)).first()
     if tx is None:

@@ -23,7 +23,7 @@ lives in a locale file:
 - `backend/app/core/i18n/fa.json` — Excel export labels, the words the importer
   matches, demo data; used as `t("export.sheets.summary")` from `app.core.i18n`.
 
-API errors are English codes (`raise HTTPException(404, "patient_not_found")`)
+API errors are English codes (services `raise NotFoundError("patient_not_found")`)
 with a matching `errors.<code>` entry in the frontend locale file.
 `./scripts/check-no-persian.sh` (CI) rejects Persian anywhere else. Where
 Persian characters are data, not text (folding tables, test fixtures), write
@@ -73,6 +73,6 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 ## Frontend conventions
 
 - RTL everywhere: use logical utilities (`ps-`, `me-`, `start-`, `text-start`), not left/right.
-- Colours only through the tokens in `src/styles.css` (`bg-surface`, `text-ink-2`, `text-debt` …) so both themes hold.
+- Colours only through the tokens in `src/app/styles.css` (`bg-surface`, `text-ink-2`, `text-debt` …) so both themes hold.
 - The CSP forbids inline scripts; anything that must run before React lives in `public/`.
 - In this Chromium, `window.scrollTo` returns a Promise — never use it as an effect's expression body.

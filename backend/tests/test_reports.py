@@ -1,11 +1,9 @@
 from io import BytesIO
 from pathlib import Path
 
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 
-from app.core.db import SessionLocal
 from app.core.i18n import t
-from app.services import importer
 from app.utils.jalali import JMonth, parse_jalali
 from tests.conftest import Api
 
@@ -87,37 +85,6 @@ def test_excel_exports(api: Api) -> None:
 
     backup = load_workbook(BytesIO(api.c.get("/api/export/backup.xlsx").content))
     assert backup[sheets["transactions"]].max_row == 2
-
-
-def test_import_debtors_sheet(tmp_path: Path, api: Api) -> None:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = importer.SHEET
-    cheque = t("import.cheque")
-    ws.append(["name", "balance", "date", "account", "note"])
-    ws.append(["Patient One", 100, None, None, None])
-    ws.append(["Patient One imp", 900, None, None, None])
-    ws.append(["Patient. Two", 650, "1405-08-25", f"{cheque} Forouhar", None])
-    ws.append(["Patient Two", 650, "1405-09-25", cheque, None])
-    ws.append(["Patient Three", "?", None, None, None])
-    ws.append(["Patient Four", 2000, cheque, None, None])
-    path = tmp_path / "old.xlsx"
-    wb.save(path)
-
-    with SessionLocal() as db:
-        result = importer.run(db, path, parse_jalali("1405-08-01"))  # type: ignore[arg-type]
-    assert (result.patients_created, result.charges, result.cheques) == (3, 5, 3)
-    assert result.skipped and result.skipped[0][0] == 6
-
-    patients = {p["name"]: p for p in api.c.get("/api/patients").json()}
-    one, two = patients["Patient One"], patients["Patient Two"]
-    assert one["balance"] == 1_000
-    assert [t["kind"] for t in api.balance(one["id"])["treatments"]] == ["implant"]
-    assert (two["balance"], two["pending_cheques"]) == (1_300, 1_300)
-    cheques = api.c.get(
-        "/api/transactions", params={"patient_id": two["id"], "type": "payment"}
-    ).json()
-    assert sorted(c["payer_name"] or "" for c in cheques["items"]) == ["", "Forouhar"]
 
 
 def test_sqlite_backup_is_readable_and_pruned(tmp_path: Path, api: Api) -> None:
