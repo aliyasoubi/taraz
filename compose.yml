@@ -3,9 +3,9 @@
 #   docker compose up -d --build
 #
 # No port is published. patient-book's Caddy already owns 80/443; it reaches
-# this container over patient-book's Docker network as http://taraz:8000 —
-# see ops/README.md for the Caddy site block. Configuration comes from `.env`
-# beside this file; see .env.production.example.
+# this container over patient-book's Docker network as http://taraz:8000, through
+# the site file ops/deploy.sh publishes (ops/caddy/site.caddy.template).
+# Configuration comes from `.env` beside this file; see .env.production.example.
 name: taraz
 
 x-logging: &logging
@@ -33,6 +33,10 @@ services:
       TIMEZONE: ${TIMEZONE:-Asia/Tehran}
     volumes:
       - taraz_data:/data
+    # Caps so Taraz can never starve patient-book on the same VPS.
+    mem_limit: 384m
+    cpus: 1.0
+    pids_limit: 200
     read_only: true
     tmpfs: [/tmp]
     security_opt:
