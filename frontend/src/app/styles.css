@@ -1,62 +1,83 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/vazirmatn';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-/* Tokens. Components use only these, so light and dark stay in step. */
+/*
+ * Tokens, after Apple's iOS system colours. Components use only these, so light
+ * and dark stay in step.
+ *   bg        systemGroupedBackground — behind grouped lists
+ *   surface   secondarySystemGroupedBackground — the list cells
+ *   surface-2 tertiarySystemGroupedBackground
+ *   fill      tertiarySystemFill — search fields, segmented tracks, tinted icons
+ *   highlight systemGray4 — a list row while pressed
+ *   line      separator (hairline)
+ *   ink …     label, secondaryLabel, tertiaryLabel
+ */
 :root,
-[data-theme='dark'] {
-  --bg: #07060d;
-  --bg-2: #0d0b17;
-  --surface: #13111f;
-  --surface-2: #1b1829;
-  --glass: rgb(22 19 36 / 0.62);
-  --line: rgb(255 255 255 / 0.08);
-  --line-2: rgb(255 255 255 / 0.14);
-  --ink: #f5f3ff;
-  --ink-2: #b4aed0;
-  --ink-3: #736d91;
-  --brand: #8b5cf6;
-  --brand-2: #d946ef;
-  --brand-3: #f59e0b;
-  --debt: #fb7185;
-  --credit: #34d399;
-  --warn: #fbbf24;
-  --info: #38bdf8;
-  --shadow: 0 10px 40px -12px rgb(0 0 0 / 0.7);
-  --aurora-opacity: 0.55;
-  color-scheme: dark;
-}
-
 [data-theme='light'] {
-  --bg: #f5f4fb;
-  --bg-2: #eceaf6;
+  --bg: #f2f2f7;
+  --bg-2: #e5e5ea;
   --surface: #ffffff;
-  --surface-2: #f2f0fa;
-  --glass: rgb(255 255 255 / 0.72);
-  --line: rgb(24 18 54 / 0.08);
-  --line-2: rgb(24 18 54 / 0.14);
-  --ink: #17132b;
-  --ink-2: #5b5577;
-  --ink-3: #9893b0;
-  --brand: #7c3aed;
-  --brand-2: #c026d3;
-  --brand-3: #d97706;
-  --debt: #e11d48;
-  --credit: #059669;
-  --warn: #d97706;
-  --info: #0284c7;
-  --shadow: 0 10px 34px -14px rgb(40 24 90 / 0.28);
-  --aurora-opacity: 0.32;
+  --surface-2: #f2f2f7;
+  --fill: rgb(118 118 128 / 0.12);
+  --highlight: #d1d1d6;
+  --glass: rgb(249 249 249 / 0.78);
+  --line: rgb(60 60 67 / 0.18);
+  --line-2: rgb(60 60 67 / 0.29);
+  --ink: #000000;
+  --ink-2: rgb(60 60 67 / 0.62);
+  --ink-3: rgb(60 60 67 / 0.36);
+  --brand: #007aff;
+  --debt: #ff3b30;
+  --credit: #248a3d;
+  --warn: #c93400;
+  --info: #5856d6;
+  --shadow: 0 8px 32px -12px rgb(0 0 0 / 0.18);
+  --dim: rgb(0 0 0 / 0.32);
   color-scheme: light;
 }
 
+[data-theme='dark'] {
+  --bg: #000000;
+  --bg-2: #1c1c1e;
+  --surface: #1c1c1e;
+  --surface-2: #2c2c2e;
+  --fill: rgb(118 118 128 / 0.24);
+  --highlight: #3a3a3c;
+  --glass: rgb(22 22 24 / 0.78);
+  --line: rgb(84 84 88 / 0.5);
+  --line-2: rgb(84 84 88 / 0.65);
+  --ink: #ffffff;
+  --ink-2: rgb(235 235 245 / 0.62);
+  --ink-3: rgb(235 235 245 / 0.32);
+  --brand: #0a84ff;
+  --debt: #ff453a;
+  --credit: #30d158;
+  --warn: #ff9f0a;
+  --info: #5e5ce6;
+  --shadow: 0 8px 32px -12px rgb(0 0 0 / 0.7);
+  --dim: rgb(0 0 0 / 0.48);
+  color-scheme: dark;
+}
+
+/* Sheets sit one level up: in dark mode iOS lifts their background and cells a step. */
+[data-theme='dark'] .elevated {
+  --bg: #1c1c1e;
+  --surface: #2c2c2e;
+  --surface-2: #3a3a3c;
+  --highlight: #48484a;
+  --glass: rgb(28 28 30 / 0.8);
+}
+
 @theme inline {
-  --font-sans: 'Vazirmatn Variable', ui-sans-serif, system-ui, sans-serif;
+  /* SF on Apple devices (SF Arabic for Persian), the platform UI font elsewhere. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --color-bg: var(--bg);
   --color-bg-2: var(--bg-2);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-fill: var(--fill);
+  --color-highlight: var(--highlight);
   --color-glass: var(--glass);
   --color-line: var(--line);
   --color-line-2: var(--line-2);
@@ -64,13 +85,13 @@
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-brand: var(--brand);
-  --color-brand-2: var(--brand-2);
-  --color-brand-3: var(--brand-3);
   --color-debt: var(--debt);
   --color-credit: var(--credit);
   --color-warn: var(--warn);
   --color-info: var(--info);
   --shadow-float: var(--shadow);
+  /* The curve iOS uses for sheets and pushes. */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
@@ -80,22 +101,21 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-bg font-sans text-ink antialiased;
+    @apply bg-bg font-sans text-[17px] text-ink antialiased;
     min-height: 100dvh;
-    overscroll-behavior-y: none;
-    font-feature-settings: 'ss01';
+    overscroll-behavior: none;
   }
   /* iOS zooms into inputs below 16px. */
   input,
   textarea,
   select {
-    font-size: 16px;
+    font-size: 17px;
   }
   button {
     cursor: pointer;
   }
   ::selection {
-    background: color-mix(in oklab, var(--brand) 40%, transparent);
+    background: color-mix(in oklab, var(--brand) 30%, transparent);
   }
 }
 
@@ -105,10 +125,11 @@
 @utility pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
 }
+/* The translucent material of iOS bars. */
 @utility glass {
   background: var(--glass);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 @utility tabular {
   font-variant-numeric: tabular-nums;
@@ -119,71 +140,27 @@
     display: none;
   }
 }
+/* A hairline, one physical pixel on retina screens. */
+@utility hairline-b {
+  box-shadow: inset 0 -0.5px 0 var(--line-2);
+}
+@utility hairline-t {
+  box-shadow: inset 0 0.5px 0 var(--line-2);
+}
+/* Older screens still use these names; in this design they are plain colour. */
 @utility text-gradient {
-  background: linear-gradient(100deg, var(--brand), var(--brand-2) 55%, var(--brand-3));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--brand);
 }
 @utility bg-brand-gradient {
-  background: linear-gradient(135deg, var(--brand), var(--brand-2) 60%, var(--brand-3));
-}
-
-/* Slow drifting colour behind everything. Transform-only, so it stays on the GPU. */
-.aurora {
-  position: fixed;
-  inset: -20vmax;
-  z-index: -1;
-  pointer-events: none;
-  opacity: var(--aurora-opacity);
-  filter: blur(70px);
-}
-.aurora span {
-  position: absolute;
-  width: 55vmax;
-  height: 55vmax;
-  border-radius: 9999px;
-  mix-blend-mode: screen;
-  animation: drift 26s ease-in-out infinite alternate;
-}
-[data-theme='light'] .aurora span {
-  mix-blend-mode: multiply;
-}
-.aurora span:nth-child(1) {
-  background: radial-gradient(circle, #7c3aed 0%, transparent 65%);
-  top: 0;
-  right: 5%;
-}
-.aurora span:nth-child(2) {
-  background: radial-gradient(circle, #db2777 0%, transparent 65%);
-  top: 25%;
-  left: 0;
-  animation-duration: 32s;
-  animation-delay: -8s;
-}
-.aurora span:nth-child(3) {
-  background: radial-gradient(circle, #0ea5e9 0%, transparent 65%);
-  bottom: 0;
-  right: 20%;
-  animation-duration: 38s;
-  animation-delay: -16s;
-  opacity: 0.6;
-}
-@keyframes drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(-8vmax, 10vmax, 0) scale(1.15);
-  }
+  background: var(--brand);
 }
 
 .shimmer {
   background: linear-gradient(
     90deg,
-    var(--surface-2) 0%,
-    color-mix(in oklab, var(--surface-2) 60%, var(--ink-3)) 50%,
-    var(--surface-2) 100%
+    var(--fill) 0%,
+    color-mix(in oklab, var(--fill) 50%, transparent) 50%,
+    var(--fill) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
@@ -207,7 +184,30 @@
   inset-inline: 0;
   top: -9px;
   height: 18px;
-  background: radial-gradient(circle at 50% 50%, var(--surface) 8px, transparent 8.5px) center / 24px 18px repeat-x;
+  background: radial-gradient(circle at 50% 50%, var(--bg) 8px, transparent 8.5px) center / 24px 18px repeat-x;
+}
+
+/*
+ * While a sheet is open the screen behind it shrinks back into a card, as on iOS.
+ * The stage is the fixed, viewport-sized layer that holds the screens.
+ */
+.stage {
+  transition:
+    transform 0.5s var(--ease-ios),
+    border-radius 0.5s var(--ease-ios),
+    filter 0.5s var(--ease-ios);
+}
+html[data-sheet] body {
+  background: #000;
+}
+html[data-sheet] .stage {
+  transform: translateY(max(env(safe-area-inset-top), 10px)) scale(0.93);
+  border-radius: 12px;
+  overflow: hidden;
+  filter: brightness(0.82);
+}
+html[data-sheet='2'] .stage {
+  filter: brightness(0.7);
 }
 
 @media (prefers-reduced-motion: reduce) {

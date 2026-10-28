@@ -31,8 +31,8 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         scope: '/',
-        theme_color: '#07060d',
-        background_color: '#07060d',
+        theme_color: '#f2f2f7',
+        background_color: '#f2f2f7',
       },
       workbox: {
         navigateFallback: '/index.html',

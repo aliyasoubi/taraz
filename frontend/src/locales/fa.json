@@ -158,7 +158,9 @@
     "patients": "بیماران",
     "accounts": "حساب‌ها",
     "reports": "گزارش",
-    "addTransaction": "ثبت تراکنش"
+    "addTransaction": "ثبت تراکنش",
+    "receipts": "دریافتی‌ها",
+    "month": "پایان ماه"
   },
   "amount": {
     "label": "مبلغ",
@@ -176,6 +178,16 @@
   },
   "txForm": {
     "newTitle": "تراکنش جدید",
+    "titles": { "payment": "پرداخت جدید", "charge": "هزینه جدید", "discount": "تخفیف جدید", "refund": "استرداد جدید" },
+    "done": "ثبت",
+    "payer": "پرداخت‌کننده",
+    "to": "واریز به",
+    "notChosen": "انتخاب نشده",
+    "choosePatient": "انتخاب بیمار",
+    "previousPayers": "پرداخت‌کنندگان قبلی",
+    "chargePlaceholder": "شرح درمان",
+    "notePlaceholder": "توضیح (اختیاری)",
+    "referencePlaceholder": "شماره پیگیری (اختیاری)",
     "editTitle": "ویرایش تراکنش",
     "saveChanges": "ذخیره تغییرات",
     "submit": "ثبت {type}",
@@ -307,7 +319,10 @@
   },
   "patients": {
     "title": "بیماران",
-    "search": "جستجوی نام…",
+    "search": "جستجو",
+    "fromDebtors": "از {n} بیمار بدهکار",
+    "pendingCheques": "چک‌های در انتظار وصول",
+    "debtors": "بدهکاران",
     "sortBalance": "بیشترین بدهی",
     "sortRecent": "آخرین فعالیت",
     "sortName": "الفبا",
@@ -325,7 +340,12 @@
     "charged": "کل هزینه",
     "addPayment": "ثبت پرداخت",
     "addCharge": "ثبت هزینه",
-    "addDiscount": "تخفیف",
+    "addDiscount": "ثبت تخفیف",
+    "addRefund": "ثبت استرداد",
+    "owes": "بدهی",
+    "hasCredit": "بستانکار (پیش‌پرداخت)",
+    "settledUp": "حساب تسویه است",
+    "of": "از",
     "cases": "پرونده‌های درمان",
     "tapToEdit": "برای ویرایش پرونده، دوباره روی آن بزنید.",
     "ledger": "گردش حساب",
@@ -394,6 +414,21 @@
     "bounced": "برگشتی",
     "empty": "چکی در این دسته نیست",
     "overdue": "سررسید گذشته — وضعیت را مشخص کنید"
+  },
+  "receipts": {
+    "title": "دریافتی‌ها",
+    "total": "جمع دریافتی {month}",
+    "count": "{n} پرداخت",
+    "allAccounts": "همه حساب‌ها",
+    "empty": "پرداختی در این ماه ثبت نشده",
+    "emptyHint": "پرداخت‌ها از صفحه هر بیمار یا دکمه + بالای همین صفحه ثبت می‌شوند"
+  },
+  "month": {
+    "title": "پایان ماه",
+    "receivable": "طلب در پایان {month}",
+    "download": "دریافت فایل اکسل این ماه",
+    "details": "گزارش کامل ماه",
+    "debtors": "بدهی هر بیمار در پایان ماه"
   },
   "settings": {
     "title": "تنظیمات",

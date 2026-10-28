@@ -1,16 +1,16 @@
-import { hueOf, initials } from '@/shared/lib/text'
+import { initials } from '@/shared/lib/text'
 import { cx } from '@/shared/lib/cx'
 
-export function Avatar({ name, size = 44, className }: { name: string; size?: number; className?: string }) {
-  const h = hueOf(name)
+/** A monogram on the grey gradient of Apple's Contacts. */
+export function Avatar({ name, size = 40, className }: { name: string; size?: number; className?: string }) {
   return (
     <div
-      className={cx('grid shrink-0 place-items-center rounded-full font-bold text-white shadow-inner', className)}
+      className={cx('grid shrink-0 place-items-center rounded-full font-semibold text-white', className)}
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.36,
-        background: `linear-gradient(140deg, hsl(${h} 70% 58%), hsl(${(h + 48) % 360} 72% 42%))`,
+        fontSize: size * 0.4,
+        background: 'linear-gradient(180deg, #a5abb8, #858994)',
       }}
       aria-hidden
     >

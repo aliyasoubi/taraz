@@ -1,25 +1,24 @@
-import { motion } from 'motion/react'
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, BadgePercent, Clock3, Stethoscope, XCircle } from 'lucide-react'
 import { formatJ, relativeDay } from '@/shared/lib/jalali'
 import { METHOD_LABEL, TX_LABEL } from '@/shared/lib/labels'
 import type { Transaction } from '@/shared/api/types'
 import { useTransactionSheets } from '@/features/transactions/TransactionSheets'
 import { cx } from '@/shared/lib/cx'
-import { itemVariants, Money } from '@/shared/ui'
+import { Money } from '@/shared/ui'
 import { t } from '@/shared/lib/i18n'
 
 export function txVisual(tx: Transaction) {
   if (tx.type === 'payment') {
     if (tx.method === 'cheque' && tx.cheque_status === 'pending')
-      return { Icon: Clock3, tint: 'text-warn bg-warn/12', amount: 'text-warn', sign: '−' }
+      return { Icon: Clock3, tint: 'text-warn bg-warn/15', amount: 'text-warn', sign: '−' }
     if (tx.method === 'cheque' && tx.cheque_status === 'bounced')
-      return { Icon: XCircle, tint: 'text-ink-3 bg-surface-2', amount: 'text-ink-3 line-through', sign: '' }
-    return { Icon: ArrowDownLeft, tint: 'text-credit bg-credit/12', amount: 'text-credit', sign: '−' }
+      return { Icon: XCircle, tint: 'text-ink-2 bg-fill', amount: 'text-ink-3 line-through', sign: '' }
+    return { Icon: ArrowDownLeft, tint: 'text-credit bg-credit/15', amount: 'text-credit', sign: '−' }
   }
-  if (tx.type === 'charge') return { Icon: Stethoscope, tint: 'text-debt bg-debt/12', amount: 'text-ink', sign: '+' }
+  if (tx.type === 'charge') return { Icon: Stethoscope, tint: 'text-debt bg-debt/15', amount: 'text-ink', sign: '+' }
   if (tx.type === 'discount')
-    return { Icon: BadgePercent, tint: 'text-info bg-info/12', amount: 'text-info', sign: '−' }
-  return { Icon: ArrowUpRight, tint: 'text-brand bg-brand/12', amount: 'text-brand', sign: '+' }
+    return { Icon: BadgePercent, tint: 'text-info bg-info/15', amount: 'text-info', sign: '−' }
+  return { Icon: ArrowUpRight, tint: 'text-brand bg-brand/15', amount: 'text-brand', sign: '+' }
 }
 
 export function txTitle(tx: Transaction): string {
@@ -29,49 +28,28 @@ export function txTitle(tx: Transaction): string {
   return tx.description || (tx.method === 'cheque' ? METHOD_LABEL.cheque : TX_LABEL.payment)
 }
 
-/** One ledger line, styled like a bank statement entry: who paid → where it landed. */
-export function TxRow({
-  tx,
-  showPatient,
-  runningBalance,
-}: {
-  tx: Transaction
-  showPatient?: boolean
-  runningBalance?: number
-}) {
+/** One ledger line as a list row, like a Wallet transaction: what, who paid → where it landed, how much, when. */
+export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: boolean }) {
   const { openTransaction } = useTransactionSheets()
   const { Icon, tint, amount, sign } = txVisual(tx)
   const flow = tx.type === 'payment' || tx.type === 'refund'
+  const pendingDue = tx.method === 'cheque' && tx.cheque_due_on && tx.cheque_status === 'pending'
 
   return (
-    <motion.button
+    <button
       type="button"
-      variants={itemVariants}
-      layout="position"
-      whileTap={{ scale: 0.985 }}
       onClick={() => openTransaction(tx)}
-      className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-start transition-colors active:bg-surface-2/70"
+      className="group flex w-full items-center gap-3 ps-4 text-start transition-colors duration-300 active:bg-highlight active:duration-0"
     >
-      <div className={cx('grid size-11 shrink-0 place-items-center rounded-2xl', tint)}>
-        <Icon className="size-5" strokeWidth={2.2} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <p className="truncate text-[15px] font-semibold text-ink">{showPatient ? tx.patient_name : txTitle(tx)}</p>
-            {tx.treatment_title && !showPatient && tx.type !== 'charge' && (
-              <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-px text-[10px] text-ink-3">
-                {tx.treatment_title}
-              </span>
-            )}
-          </div>
-          <div className={cx('shrink-0 text-[15px] font-bold', amount)}>
-            <span className="me-0.5 opacity-70">{sign}</span>
-            <Money value={tx.amount} unit={false} />
-          </div>
-        </div>
-        <div className="mt-1 flex items-center justify-between gap-3 text-[12px] text-ink-3">
-          <div className="flex min-w-0 items-center gap-1">
+      <span className={cx('grid size-9 shrink-0 place-items-center rounded-full', tint)}>
+        <Icon className="size-[18px]" strokeWidth={2.2} />
+      </span>
+      <span className="relative flex min-w-0 flex-1 items-center gap-3 py-2.5 pe-4 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-bottom after:scale-y-50 after:bg-line-2 group-last:after:hidden">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[17px] leading-[22px]">
+            {showPatient ? tx.patient_name : txTitle(tx)}
+          </span>
+          <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[13px] leading-[18px] text-ink-2">
             {flow ? (
               <>
                 <span className="truncate">
@@ -79,31 +57,32 @@ export function TxRow({
                     ? (tx.account_title ?? t('common.account'))
                     : (tx.payer_name ?? t('common.self'))}
                 </span>
-                <ArrowLeft className="size-3 shrink-0 opacity-70" />
+                <ArrowLeft className="size-3 shrink-0" />
                 <span className="truncate">
                   {tx.type === 'refund' ? t('common.patient') : (tx.account_title ?? t('common.unknownAccount'))}
                 </span>
-                {tx.method && <span className="shrink-0 opacity-70">· {METHOD_LABEL[tx.method]}</span>}
               </>
             ) : (
               <span className="truncate">
                 {showPatient ? txTitle(tx) : (tx.treatment_title ?? formatJ(tx.occurred_on))}
               </span>
             )}
-          </div>
-          <span className="shrink-0 text-[11px]">
-            {tx.method === 'cheque' && tx.cheque_due_on && tx.cheque_status === 'pending'
-              ? t('txRow.due', { when: relativeDay(tx.cheque_due_on) })
-              : relativeDay(tx.occurred_on)}
           </span>
-        </div>
-        {runningBalance !== undefined && (
-          <p className="mt-0.5 text-[11px] text-ink-3">
-            {t('txRow.balanceAfter')}{' '}
-            <Money value={runningBalance} tone="auto" unit={false} className="font-semibold" />
-          </p>
-        )}
-      </div>
-    </motion.button>
+        </span>
+        <span className="shrink-0 text-end">
+          <span className={cx('block text-[17px] leading-[22px]', amount)}>
+            <span className="me-0.5">{sign}</span>
+            <Money value={tx.amount} unit={false} />
+          </span>
+          <span className={cx('mt-0.5 block text-[13px] leading-[18px]', pendingDue ? 'text-warn' : 'text-ink-2')}>
+            {pendingDue
+              ? t('txRow.due', { when: relativeDay(tx.cheque_due_on!) })
+              : tx.method && flow
+                ? `${METHOD_LABEL[tx.method]} · ${relativeDay(tx.occurred_on)}`
+                : relativeDay(tx.occurred_on)}
+          </span>
+        </span>
+      </span>
+    </button>
   )
 }

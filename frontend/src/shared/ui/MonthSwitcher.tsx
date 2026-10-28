@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { currentJMonth, monthLabel, shiftMonth } from '@/shared/lib/jalali'
+import { spring } from './motion'
 import { Pressable } from './Pressable'
 import { t } from '@/shared/lib/i18n'
 
@@ -35,10 +36,10 @@ export function MonthSwitcher({
   const now = currentJMonth()
   const isCurrent = value.jy === now.jy && value.jm === now.jm
   return (
-    <div className="flex items-center justify-between rounded-3xl border border-line bg-surface/70 p-1.5 backdrop-blur">
+    <div className="flex items-center justify-between rounded-[12px] bg-surface px-1">
       <Pressable
         onClick={() => onShift(-1)}
-        className="grid size-11 place-items-center rounded-2xl bg-surface-2"
+        className="grid size-11 place-items-center rounded-full text-brand"
         aria-label={t('calendar.prevMonth')}
       >
         <ChevronRight className="size-5" />
@@ -50,18 +51,18 @@ export function MonthSwitcher({
             initial={{ opacity: 0, x: dir * -50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: dir * 50 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            transition={spring}
             className="absolute inset-0 flex flex-col items-center justify-center"
           >
-            <span className="text-base font-extrabold">{monthLabel(value.jy, value.jm)}</span>
-            {isCurrent && <span className="text-[10px] font-semibold text-brand">{t('calendar.currentMonth')}</span>}
+            <span className="text-[17px] font-semibold">{monthLabel(value.jy, value.jm)}</span>
+            {isCurrent && <span className="text-[11px] text-ink-2">{t('calendar.currentMonth')}</span>}
           </motion.div>
         </AnimatePresence>
       </div>
       <Pressable
         onClick={() => onShift(1)}
         disabled={isCurrent}
-        className="grid size-11 place-items-center rounded-2xl bg-surface-2 disabled:opacity-30"
+        className="grid size-11 place-items-center rounded-full text-brand disabled:text-ink-3"
         aria-label={t('calendar.nextMonth')}
       >
         <ChevronLeft className="size-5" />

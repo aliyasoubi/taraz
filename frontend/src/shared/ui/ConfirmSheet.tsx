@@ -1,9 +1,9 @@
-import { AlertTriangle } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Button } from './Button'
-import { Sheet } from './Sheet'
 import { t } from '@/shared/lib/i18n'
+import { Spinner } from './Button'
+import { Sheet } from './Sheet'
 
+/** An iOS action sheet: the question, the destructive choice, and Cancel set apart below. */
 export function ConfirmSheet({
   open,
   onClose,
@@ -23,21 +23,27 @@ export function ConfirmSheet({
 }) {
   return (
     <Sheet open={open} onClose={onClose}>
-      <div className="flex flex-col items-center pt-2 pb-2 text-center">
-        <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-debt/12 text-debt">
-          <AlertTriangle className="size-7" />
+      <div className="overflow-hidden rounded-[14px] bg-surface text-center">
+        <div className="px-5 py-4">
+          <h3 className="text-[13px] font-semibold text-ink-2">{title}</h3>
+          <p className="mt-1 text-[13px] leading-5 text-ink-2">{message}</p>
         </div>
-        <h3 className="text-lg font-bold">{title}</h3>
-        <p className="mt-2 text-sm leading-7 text-ink-2">{message}</p>
-        <div className="mt-6 grid w-full grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button variant="danger" onClick={onConfirm} loading={loading}>
-            {confirmLabel}
-          </Button>
-        </div>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={loading}
+          className="grid h-14 w-full place-items-center text-[20px] text-debt hairline-t transition-colors active:bg-highlight"
+        >
+          {loading ? <Spinner /> : confirmLabel}
+        </button>
       </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2 h-14 w-full rounded-[14px] bg-surface text-[20px] font-semibold text-brand transition-colors active:bg-highlight"
+      >
+        {t('common.cancel')}
+      </button>
     </Sheet>
   )
 }

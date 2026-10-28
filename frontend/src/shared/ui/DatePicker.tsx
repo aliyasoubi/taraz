@@ -52,7 +52,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
       <div className="mb-3 flex items-center justify-between">
         <Pressable
           onClick={() => go(-1)}
-          className="grid size-10 place-items-center rounded-full bg-surface-2"
+          className="grid size-10 place-items-center rounded-full text-brand"
           aria-label={t('calendar.prevMonth')}
         >
           <ChevronRight className="size-5" />
@@ -60,13 +60,13 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
         <button
           type="button"
           onClick={() => setMode((m) => (m === 'days' ? 'months' : 'days'))}
-          className="rounded-full px-4 py-2 text-base font-bold text-ink hover:bg-surface-2"
+          className="rounded-full px-4 py-2 text-[17px] font-semibold text-ink"
         >
           {mode === 'days' ? monthLabel(view.jy, view.jm) : faDigits(view.jy)}
         </button>
         <Pressable
           onClick={() => go(1)}
-          className="grid size-10 place-items-center rounded-full bg-surface-2"
+          className="grid size-10 place-items-center rounded-full text-brand"
           aria-label={t('calendar.nextMonth')}
         >
           <ChevronLeft className="size-5" />
@@ -87,8 +87,8 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
                 setMode('days')
               }}
               className={cx(
-                'h-12 rounded-2xl text-sm font-semibold',
-                view.jm === i + 1 ? 'text-white bg-brand-gradient' : 'bg-surface-2 text-ink-2',
+                'h-11 rounded-[10px] text-[15px] font-medium',
+                view.jm === i + 1 ? 'bg-brand text-white' : 'bg-surface text-ink',
               )}
             >
               {name}
@@ -97,7 +97,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
         </div>
       ) : (
         <>
-          <div className="mb-1 grid grid-cols-7 text-center text-xs font-semibold text-ink-3">
+          <div className="mb-1 grid grid-cols-7 text-center text-[13px] font-semibold text-ink-3">
             {WEEKDAYS.map((w, i) => (
               <div key={w} className={cx('py-1', i === FRIDAY && 'text-debt/80')}>
                 {w}
@@ -121,11 +121,11 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
                       key={iso}
                       onClick={() => onPick(iso)}
                       className={cx(
-                        'relative mx-auto grid size-11 place-items-center rounded-full text-[15px] font-semibold',
+                        'relative mx-auto grid size-11 place-items-center rounded-full text-[19px]',
                         iso === value
-                          ? 'text-white shadow-lg shadow-brand/40 bg-brand-gradient'
+                          ? 'bg-brand font-semibold text-white'
                           : iso === today
-                            ? 'text-brand ring-1 ring-brand/50'
+                            ? 'font-semibold text-brand'
                             : weekdayIndex(iso) === FRIDAY
                               ? 'text-debt/80'
                               : 'text-ink',

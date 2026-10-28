@@ -1,10 +1,10 @@
-import { Pencil } from 'lucide-react'
+import { Ellipsis } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import { useTransactionSheets } from '@/features/transactions/TransactionSheets'
-import type { Treatment } from '@/shared/api/types'
+import type { Treatment, TxType } from '@/shared/api/types'
 import { t } from '@/shared/lib/i18n'
-import { IconButton, PageHeader, SectionTitle, Skeleton } from '@/shared/ui'
+import { IconButton, PageHeader, Skeleton } from '@/shared/ui'
 import { usePatient, usePatientTransactions } from './api'
 import { CaseStrip } from './components/CaseStrip'
 import { LedgerTimeline } from './components/LedgerTimeline'
@@ -29,10 +29,13 @@ export function PatientPage() {
 
   if (isLoading || !patient) {
     return (
-      <div className="px-4 pt-safe">
-        <Skeleton className="mt-16 h-56 rounded-[30px]" />
-        <Skeleton className="mt-4 h-24" />
-        <Skeleton className="mt-4 h-64" />
+      <div>
+        <PageHeader large={false} title="" back={t('patients.title')} />
+        <div className="flex flex-col items-center px-4">
+          <Skeleton className="size-[84px] rounded-full" />
+          <Skeleton className="mt-4 h-7 w-40" />
+          <Skeleton className="mt-6 h-36 w-full" />
+        </div>
       </div>
     )
   }
@@ -40,44 +43,45 @@ export function PatientPage() {
   const selectedCase = filter === 'all' ? undefined : patient.treatments.find((tr) => tr.id === filter)
   const close = () => setSheet(null)
   const caseSheet = sheet?.kind === 'case' ? sheet : null
+  const add = (type: TxType) => {
+    close()
+    newTransaction({ patientId: patient.id, treatmentId: selectedCase?.id, type })
+  }
 
   return (
     <div>
       <PageHeader
-        back
+        large={false}
+        titleAfter={120}
         title={patient.name}
+        back={t('patients.title')}
         actions={
           <IconButton onClick={() => setSheet({ kind: 'menu' })} aria-label={t('common.options')}>
-            <Pencil className="size-[18px]" />
+            <span className="grid size-[26px] place-items-center rounded-full border-[1.8px] border-current">
+              <Ellipsis className="size-4" strokeWidth={3} />
+            </span>
           </IconButton>
         }
       />
 
       <div className="px-4">
         <PatientHero patient={patient} view={selectedCase ?? patient} caseTitle={selectedCase?.title} />
-        <div className="mt-4">
-          <QuickActions
-            onAdd={(type) => newTransaction({ patientId: patient.id, treatmentId: selectedCase?.id, type })}
-          />
-        </div>
-
-        <SectionTitle>{t('patient.cases')}</SectionTitle>
+        <QuickActions onAdd={add} />
         <CaseStrip
           patient={patient}
           selected={filter}
           onSelect={setFilter}
           onEdit={(treatment) => setSheet({ kind: 'case', treatment })}
-          onAdd={() => setSheet({ kind: 'case' })}
         />
-
-        <SectionTitle>{t('patient.ledger')}</SectionTitle>
-        {transactions ? <LedgerTimeline ledger={ledger} /> : <Skeleton className="h-48" />}
+        {transactions ? <LedgerTimeline ledger={ledger} /> : <Skeleton className="mt-8 h-48" />}
       </div>
 
       <PatientMenuSheet
         patient={patient}
         open={sheet?.kind === 'menu'}
         confirmingDelete={sheet?.kind === 'delete'}
+        onAdd={add}
+        onNewCase={() => setSheet({ kind: 'case' })}
         onEdit={() => setSheet({ kind: 'edit' })}
         onAskDelete={() => setSheet({ kind: 'delete' })}
         onClose={close}

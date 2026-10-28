@@ -11,8 +11,8 @@ export function Chip({
   return (
     <Pressable
       className={cx(
-        'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors',
-        active ? 'border-brand/50 bg-brand/15 text-ink' : 'border-line bg-surface-2/70 text-ink-2',
+        'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-medium transition-colors',
+        active ? 'bg-brand text-white' : 'bg-fill text-ink',
         className,
       )}
       {...rest}

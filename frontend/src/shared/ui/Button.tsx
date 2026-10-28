@@ -5,6 +5,7 @@ import { Pressable, type PressableProps } from './Pressable'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
+/** iOS button styles: filled, tinted (secondary), plain (ghost) and destructive. */
 export function Button({
   variant = 'primary',
   loading,
@@ -14,16 +15,16 @@ export function Button({
   ...rest
 }: PressableProps & { variant?: Variant; loading?: boolean; children?: ReactNode }) {
   const styles: Record<Variant, string> = {
-    primary: 'bg-brand-gradient text-white shadow-[0_8px_24px_-8px] shadow-brand/60',
-    secondary: 'bg-surface-2 text-ink border border-line',
-    ghost: 'text-ink-2 hover:bg-surface-2',
-    danger: 'bg-debt/12 text-debt border border-debt/25',
+    primary: 'bg-brand text-white',
+    secondary: 'bg-brand/15 text-brand',
+    ghost: 'text-brand',
+    danger: 'bg-debt/15 text-debt',
   }
   return (
     <Pressable
       disabled={disabled || loading}
       className={cx(
-        'inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-[15px] font-semibold transition-opacity disabled:opacity-50',
+        'inline-flex h-[50px] items-center justify-center gap-2 rounded-[12px] px-5 text-[17px] font-semibold disabled:opacity-40',
         styles[variant],
         className,
       )}
@@ -34,23 +35,16 @@ export function Button({
   )
 }
 
+/** A bar button: the bare glyph in the tint colour, with a full 44pt touch target. */
 export function IconButton({ className, ...rest }: PressableProps) {
-  return (
-    <Pressable
-      className={cx(
-        'grid size-10 place-items-center rounded-full border border-line bg-surface/70 text-ink-2 backdrop-blur',
-        className,
-      )}
-      {...rest}
-    />
-  )
+  return <Pressable className={cx('grid size-10 place-items-center rounded-full text-brand', className)} {...rest} />
 }
 
 export function Spinner({ className }: { className?: string }) {
   return (
     <span
       className={cx(
-        'inline-block size-5 animate-spin rounded-full border-2 border-current border-t-transparent',
+        'inline-block size-5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-70',
         className,
       )}
       aria-label={t('common.loading')}

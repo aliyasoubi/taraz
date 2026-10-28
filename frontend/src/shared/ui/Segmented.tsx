@@ -3,6 +3,7 @@ import { useId, type ReactNode } from 'react'
 import { cx } from '@/shared/lib/cx'
 import { spring } from './motion'
 
+/** iOS segmented control: a raised thumb slides across a grey track. */
 export function Segmented<T extends string>({
   value,
   options,
@@ -16,7 +17,7 @@ export function Segmented<T extends string>({
 }) {
   const id = useId()
   return (
-    <div className={cx('flex rounded-2xl border border-line bg-surface-2/70 p-1', className)} role="tablist">
+    <div className={cx('flex rounded-[9px] bg-fill p-0.5', className)} role="tablist">
       {options.map((o) => {
         const active = o.value === value
         return (
@@ -27,15 +28,18 @@ export function Segmented<T extends string>({
             aria-selected={active}
             onClick={() => onChange(o.value)}
             className={cx(
-              'relative flex-1 rounded-xl px-2 py-2 text-[13px] font-semibold transition-colors',
-              active ? 'text-ink' : 'text-ink-3',
+              'relative h-7 flex-1 rounded-[7px] px-2 text-[13px] transition-[font-weight]',
+              active ? 'font-semibold text-ink' : 'font-medium text-ink',
             )}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${id}`}
                 transition={spring}
-                className={cx('absolute inset-0 rounded-xl bg-surface shadow-sm ring-1 ring-line', o.tone)}
+                className={cx(
+                  'absolute inset-0 rounded-[7px] bg-surface shadow-[0_3px_8px_rgb(0_0_0/0.12),0_3px_1px_rgb(0_0_0/0.04)] dark:bg-[#636366]',
+                  o.tone,
+                )}
               />
             )}
             <span className="relative">{o.label}</span>
