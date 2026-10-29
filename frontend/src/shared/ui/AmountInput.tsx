@@ -36,7 +36,8 @@ export function AmountInput({
   const raw = shown ? String(Math.floor(shown)) : ''
   const text = { brand: 'text-ink', debt: 'text-debt', credit: 'text-credit' }[tone]
   // Long rial amounts shrink to stay on one line.
-  const size = display.length > 13 ? 'text-[34px]' : display.length > 10 ? 'text-[42px]' : 'text-[52px]'
+  // Empty, it reads "Amount" in grey: a lone Persian zero is a dot at this size.
+  const size = !display || display.length > 13 ? 'text-[34px]' : display.length > 10 ? 'text-[42px]' : 'text-[52px]'
 
   return (
     <div className="pt-3 pb-2 text-center">
@@ -46,7 +47,7 @@ export function AmountInput({
           enterKeyHint="done"
           autoComplete="off"
           aria-label={t('amount.label')}
-          placeholder={faDigits(0)}
+          placeholder={t('amount.label')}
           autoFocus={autoFocus}
           value={display}
           onChange={(e) => set(digitsOnly(e.target.value))}

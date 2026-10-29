@@ -15,7 +15,6 @@ export function LedgerTimeline({ ledger }: { ledger: Ledger }) {
       {ledger.months.map((month) => (
         <ListSection
           key={month.key}
-          className="first:mt-8"
           header={
             <>
               <span>{monthLabel(month.jy, month.jm)}</span>

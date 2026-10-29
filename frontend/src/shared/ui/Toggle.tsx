@@ -26,6 +26,7 @@ export function Toggle({
     >
       <motion.span
         layout
+        layoutDependency={checked}
         transition={spring}
         className="size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgb(0_0_0/0.15)]"
       />

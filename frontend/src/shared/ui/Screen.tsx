@@ -27,7 +27,7 @@ export function Screen({ id, children, className }: { id: string; children: Reac
       <div
         ref={ref}
         className={cx(
-          'absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain bg-bg pb-[calc(env(safe-area-inset-bottom)+84px)]',
+          'absolute inset-0 no-scrollbar overflow-x-hidden overflow-y-auto overscroll-contain bg-bg pb-[calc(env(safe-area-inset-bottom)+84px)]',
           className,
         )}
       >

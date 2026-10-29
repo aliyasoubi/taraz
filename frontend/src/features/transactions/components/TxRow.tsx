@@ -52,7 +52,7 @@ export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: bool
           <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[13px] leading-[18px] text-ink-2">
             {flow ? (
               <>
-                <span className="truncate">
+                <span className="max-w-[55%] shrink-0 truncate">
                   {tx.type === 'refund'
                     ? (tx.account_title ?? t('common.account'))
                     : (tx.payer_name ?? t('common.self'))}
@@ -75,11 +75,7 @@ export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: bool
             <Money value={tx.amount} unit={false} />
           </span>
           <span className={cx('mt-0.5 block text-[13px] leading-[18px]', pendingDue ? 'text-warn' : 'text-ink-2')}>
-            {pendingDue
-              ? t('txRow.due', { when: relativeDay(tx.cheque_due_on!) })
-              : tx.method && flow
-                ? `${METHOD_LABEL[tx.method]} · ${relativeDay(tx.occurred_on)}`
-                : relativeDay(tx.occurred_on)}
+            {pendingDue ? t('txRow.due', { when: relativeDay(tx.cheque_due_on!) }) : relativeDay(tx.occurred_on)}
           </span>
         </span>
       </span>

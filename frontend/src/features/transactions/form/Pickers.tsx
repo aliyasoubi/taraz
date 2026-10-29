@@ -6,6 +6,7 @@ import { usePatients } from '@/features/patients/api'
 import { PatientFormSheet } from '@/features/patients/components/PatientFormSheet'
 import { useSuggestions } from '@/features/transactions/api'
 import type { Account } from '@/shared/api/types'
+import { accountAccent } from '@/shared/lib/labels'
 import { fold } from '@/shared/lib/text'
 import { t } from '@/shared/lib/i18n'
 import { Avatar, ListIcon, ListRow, ListSection, Money, SearchField } from '@/shared/ui'
@@ -156,7 +157,7 @@ export function AccountPicker({
               icon={
                 <span
                   className="grid size-[29px] place-items-center rounded-[7px] text-white"
-                  style={{ background: a.color }}
+                  style={{ background: accountAccent(a.color) }}
                 >
                   <CreditCard className="size-[17px]" />
                 </span>

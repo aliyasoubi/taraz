@@ -16,7 +16,7 @@ export function ListSection({
   className?: string
 }) {
   return (
-    <section className={cx('mt-8 first:mt-2', className)}>
+    <section className={className?.includes('mt-') ? className : cx('mt-8 first:mt-2', className)}>
       {header && <div className="mb-1.5 flex items-end justify-between px-4 text-[13px] text-ink-2">{header}</div>}
       <div className="overflow-hidden rounded-[12px] bg-surface">{children}</div>
       {footer && <div className="mt-1.5 px-4 text-[13px] leading-5 text-ink-2">{footer}</div>}
