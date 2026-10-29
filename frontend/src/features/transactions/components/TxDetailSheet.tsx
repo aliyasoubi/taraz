@@ -1,6 +1,5 @@
-import { motion } from 'motion/react'
-import { Ban, CheckCircle2, Copy, Pencil, RotateCcw, Trash2, UserRound } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Ban, CheckCircle2, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useDeleteTransaction, useSaveTransaction } from '@/features/transactions/api'
@@ -12,19 +11,10 @@ import { t } from '@/shared/lib/i18n'
 import { formatJ, relativeDay, weekdayName } from '@/shared/lib/jalali'
 import { CHEQUE_LABEL, METHOD_LABEL, TX_LABEL } from '@/shared/lib/labels'
 import { usePrefs } from '@/shared/lib/settings'
-import { Badge, Button, ConfirmSheet, Money, Pressable, Sheet } from '@/shared/ui'
+import { Badge, ConfirmSheet, ListIcon, ListRow, ListSection, Money, Sheet } from '@/shared/ui'
 import { receiptText } from '../receipt'
 import { TransferFlow } from './TransferFlow'
 import { txVisual } from './TxRow'
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 py-2.5 text-sm">
-      <span className="shrink-0 text-ink-3">{label}</span>
-      <span className="min-w-0 text-end font-medium text-ink">{children}</span>
-    </div>
-  )
-}
 
 export function TxDetailSheet({
   tx: initial,
@@ -84,23 +74,12 @@ export function TxDetailSheet({
   return (
     <>
       <Sheet open={Boolean(initial)} onClose={onClose}>
-        <div className="flex flex-col items-center pt-1 pb-1 text-center">
-          <motion.div
-            initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 16 }}
-            className={cx('relative grid size-16 place-items-center rounded-[22px]', tint)}
-          >
-            <motion.span
-              className="absolute inset-0 rounded-[22px] border-2 border-current"
-              initial={{ scale: 1, opacity: 0.6 }}
-              animate={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 1.2, repeat: 2 }}
-            />
-            <Icon className="size-8" strokeWidth={2.2} />
-          </motion.div>
+        <div className="flex flex-col items-center pt-1 text-center">
+          <div className={cx('grid size-14 place-items-center rounded-full', tint)}>
+            <Icon className="size-7" strokeWidth={2.2} />
+          </div>
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink-2">{TX_LABEL[tx.type]}</span>
+            <span className="text-[15px] text-ink-2">{TX_LABEL[tx.type]}</span>
             {isCheque && tx.cheque_status && (
               <Badge
                 tone={tx.cheque_status === 'pending' ? 'warn' : tx.cheque_status === 'cleared' ? 'credit' : 'debt'}
@@ -109,95 +88,127 @@ export function TxDetailSheet({
               </Badge>
             )}
           </div>
-          <Money value={tx.amount} className="mt-1 text-[34px] font-extrabold tracking-tight" />
-          <p className="mt-1 text-[13px] text-ink-3">
+          <Money value={tx.amount} className="mt-1 text-[34px] font-bold tracking-tight" />
+          <p className="mt-0.5 text-[13px] text-ink-2">
             {weekdayName(tx.occurred_on)} {formatJ(tx.occurred_on)}
           </p>
         </div>
 
-        <div className="receipt-edge mt-5 rounded-b-3xl bg-surface-2/70 px-4 pt-6 pb-3">
-          {tx.type === 'payment' && (
-            <div className="mb-3 border-b border-dashed border-line-2 pb-4">
-              <TransferFlow tx={tx} />
-            </div>
-          )}
-          <div className="divide-y divide-line">
-            <Row label={t('common.patient')}>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 text-brand"
-                onClick={() => {
-                  onClose()
-                  navigate(`/patients/${tx.patient_id}`)
-                }}
-              >
-                <UserRound className="size-3.5" /> {tx.patient_name}
-              </button>
-            </Row>
-            {tx.treatment_title && <Row label={t('common.case')}>{tx.treatment_title}</Row>}
-            {tx.type === 'refund' && tx.account_title && (
-              <Row label={t('txDetail.fromAccount')}>{tx.account_title}</Row>
-            )}
-            {tx.method && <Row label={t('common.method')}>{METHOD_LABEL[tx.method]}</Row>}
-            {tx.cheque_due_on && (
-              <Row label={t('common.chequeDue')}>
-                {formatJ(tx.cheque_due_on)} <span className="text-ink-3">({relativeDay(tx.cheque_due_on)})</span>
-              </Row>
-            )}
-            {tx.reference && (
-              <Row label={isCheque ? t('common.chequeNumber') : t('common.reference')}>
-                <span dir="ltr">{faDigits(tx.reference)}</span>
-              </Row>
-            )}
-            {tx.description && <Row label={t('common.description')}>{tx.description}</Row>}
-            <Row label={t('txDetail.ledgerStatus')}>
-              {tx.counts ? (
-                <span className="text-credit">{t('txDetail.applied')}</span>
-              ) : (
-                <span className="text-warn">{t('txDetail.notApplied')}</span>
-              )}
-            </Row>
-          </div>
-        </div>
-
-        {isCheque && (
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {tx.cheque_status === 'pending' ? (
-              <>
-                <Button
-                  className="bg-credit [background-image:none] text-white shadow-none"
-                  onClick={() => setCheque('cleared')}
-                  loading={save.isPending}
-                >
-                  <CheckCircle2 className="size-5" /> {t('txDetail.markCleared')}
-                </Button>
-                <Button variant="danger" onClick={() => setCheque('bounced')} disabled={save.isPending}>
-                  <Ban className="size-5" /> {t('txDetail.markBounced')}
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="secondary"
-                className="col-span-2"
-                onClick={() => setCheque('pending')}
-                loading={save.isPending}
-              >
-                <RotateCcw className="size-4" /> {t('txDetail.markPending')}
-              </Button>
-            )}
+        {tx.type === 'payment' && (
+          <div className="mt-5 rounded-[12px] bg-surface p-4">
+            <TransferFlow tx={tx} />
           </div>
         )}
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <ActionTile icon={<Pencil className="size-5" />} label={t('common.edit')} onClick={() => onEdit(tx)} />
-          <ActionTile icon={<Copy className="size-5" />} label={t('txDetail.copyReceipt')} onClick={copy} />
-          <ActionTile
-            icon={<Trash2 className="size-5" />}
-            label={t('common.delete')}
-            danger
+        <ListSection className="mt-4">
+          <ListRow
+            title={t('common.patient')}
+            value={<span className="text-brand">{tx.patient_name}</span>}
+            chevron
+            onClick={() => {
+              onClose()
+              navigate(`/patients/${tx.patient_id}`)
+            }}
+          />
+          {tx.treatment_title && <ListRow title={t('common.case')} value={tx.treatment_title} />}
+          {tx.type === 'refund' && tx.account_title && (
+            <ListRow title={t('txDetail.fromAccount')} value={tx.account_title} />
+          )}
+          {tx.method && <ListRow title={t('common.method')} value={METHOD_LABEL[tx.method]} />}
+          {tx.cheque_due_on && (
+            <ListRow
+              title={t('common.chequeDue')}
+              value={`${formatJ(tx.cheque_due_on)} (${relativeDay(tx.cheque_due_on)})`}
+            />
+          )}
+          {tx.reference && (
+            <ListRow
+              title={isCheque ? t('common.chequeNumber') : t('common.reference')}
+              value={<span dir="ltr">{faDigits(tx.reference)}</span>}
+            />
+          )}
+          {tx.description && <ListRow title={t('common.description')} subtitle={tx.description} />}
+          <ListRow
+            title={t('txDetail.ledgerStatus')}
+            value={
+              tx.counts ? (
+                <span className="text-credit">{t('txDetail.applied')}</span>
+              ) : (
+                <span className="text-warn">{t('txDetail.notApplied')}</span>
+              )
+            }
+          />
+        </ListSection>
+
+        {isCheque && (
+          <ListSection className="mt-6">
+            {tx.cheque_status === 'pending' ? (
+              <>
+                <ListRow
+                  icon={
+                    <ListIcon tone="credit">
+                      <CheckCircle2 />
+                    </ListIcon>
+                  }
+                  title={t('txDetail.markCleared')}
+                  onClick={() => !save.isPending && setCheque('cleared')}
+                />
+                <ListRow
+                  icon={
+                    <ListIcon tone="debt">
+                      <Ban />
+                    </ListIcon>
+                  }
+                  title={t('txDetail.markBounced')}
+                  onClick={() => !save.isPending && setCheque('bounced')}
+                />
+              </>
+            ) : (
+              <ListRow
+                icon={
+                  <ListIcon tone="gray">
+                    <RotateCcw />
+                  </ListIcon>
+                }
+                title={t('txDetail.markPending')}
+                onClick={() => !save.isPending && setCheque('pending')}
+              />
+            )}
+          </ListSection>
+        )}
+
+        <ListSection className="mt-6">
+          <ListRow
+            icon={
+              <ListIcon tone="gray">
+                <Pencil />
+              </ListIcon>
+            }
+            title={t('common.edit')}
+            onClick={() => onEdit(tx)}
+          />
+          <ListRow
+            icon={
+              <ListIcon tone="gray">
+                <Copy />
+              </ListIcon>
+            }
+            title={t('txDetail.copyReceipt')}
+            onClick={copy}
+          />
+        </ListSection>
+        <ListSection className="mt-6">
+          <ListRow
+            icon={
+              <ListIcon tone="debt">
+                <Trash2 />
+              </ListIcon>
+            }
+            title={t('common.delete')}
+            destructive
             onClick={() => setConfirm(true)}
           />
-        </div>
+        </ListSection>
       </Sheet>
 
       <ConfirmSheet
@@ -218,30 +229,5 @@ export function TxDetailSheet({
         }
       />
     </>
-  )
-}
-
-function ActionTile({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon: ReactNode
-  label: string
-  onClick: () => void
-  danger?: boolean
-}) {
-  return (
-    <Pressable
-      onClick={onClick}
-      className={cx(
-        'flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-surface-2/60 py-3 text-xs font-semibold',
-        danger ? 'text-debt' : 'text-ink-2',
-      )}
-    >
-      {icon}
-      {label}
-    </Pressable>
   )
 }

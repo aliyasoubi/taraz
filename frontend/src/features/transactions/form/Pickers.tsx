@@ -13,7 +13,9 @@ import { Avatar, ListIcon, ListRow, ListSection, Money, SearchField } from '@/sh
 
 /** A page's scroll area inside the sheet. */
 export function FormPage({ children }: { children: ReactNode }) {
-  return <div className="absolute inset-0 overflow-y-auto overscroll-contain px-4 pt-1 pb-10">{children}</div>
+  return (
+    <div className="absolute inset-0 no-scrollbar overflow-y-auto overscroll-contain px-4 pt-1 pb-10">{children}</div>
+  )
 }
 
 /** A row that starts something new, in the tint colour. */

@@ -5,7 +5,7 @@ import type { Patient, PatientDetail } from '@/shared/api/types'
 import { errorMessage } from '@/shared/lib/errors'
 import { digitsOnly } from '@/shared/lib/format'
 import { t } from '@/shared/lib/i18n'
-import { Button, Field, Sheet, TextArea, TextInput } from '@/shared/ui'
+import { BarButton, Field, Sheet, TextArea, TextInput } from '@/shared/ui'
 
 export function PatientFormSheet({
   open,
@@ -43,10 +43,11 @@ export function PatientFormSheet({
       open={open}
       onClose={onClose}
       title={patient ? t('patientForm.editTitle') : t('patientForm.newTitle')}
-      footer={
-        <Button className="w-full" onClick={submit} loading={save.isPending} disabled={!name.trim()}>
-          {patient ? t('common.save') : t('patientForm.add')}
-        </Button>
+      leading={<BarButton onClick={onClose}>{t('common.cancel')}</BarButton>}
+      trailing={
+        <BarButton strong onClick={submit} disabled={!name.trim() || save.isPending}>
+          {patient ? t('common.save') : t('common.add')}
+        </BarButton>
       }
     >
       <div className="space-y-4">

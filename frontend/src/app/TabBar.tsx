@@ -11,10 +11,6 @@ const TABS = [
   { to: '/month', label: t('nav.month'), icon: CalendarDays },
 ] as const
 
-export function isTabRoot(path: string): boolean {
-  return TABS.some((tab) => tab.to === path)
-}
-
 function tabOf(path: string): string {
   return TABS.find((tab) => tab.to !== '/' && path.startsWith(tab.to))?.to ?? '/'
 }

@@ -151,7 +151,9 @@ export function Sheet({
             {bare ? (
               <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-2 pb-5">{children}</div>
+              <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-2 pb-5">
+                {children}
+              </div>
             )}
             {footer && <div className="shrink-0 px-4 pt-2 pb-safe">{footer}</div>}
             {!footer && <div className="pb-safe" />}
@@ -181,7 +183,7 @@ export function BarButton({
       onClick={onClick}
       disabled={disabled}
       className={cx(
-        'h-11 px-1 text-[17px] text-brand transition-opacity active:opacity-40 disabled:text-ink-3',
+        'h-11 px-1 text-[17px] whitespace-nowrap text-brand transition-opacity active:opacity-40 disabled:text-ink-3',
         strong && 'font-semibold',
       )}
     >

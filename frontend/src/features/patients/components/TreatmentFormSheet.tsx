@@ -6,7 +6,7 @@ import type { Treatment, TreatmentKind } from '@/shared/api/types'
 import { errorMessage } from '@/shared/lib/errors'
 import { t } from '@/shared/lib/i18n'
 import { TREATMENT_LABEL } from '@/shared/lib/labels'
-import { Button, Chip, Field, Segmented, Sheet, TextInput } from '@/shared/ui'
+import { BarButton, Chip, Field, Segmented, Sheet, TextInput } from '@/shared/ui'
 
 const KIND_ORDER: TreatmentKind[] = [
   'general',
@@ -67,17 +67,18 @@ export function TreatmentFormSheet({
       open={open}
       onClose={onClose}
       title={treatment ? t('treatmentForm.editTitle') : t('treatmentForm.newTitle')}
-      subtitle={t('treatmentForm.subtitle')}
-      footer={
-        <Button className="w-full" onClick={submit} loading={save.isPending}>
-          {treatment ? t('common.save') : t('treatmentForm.create')}
-        </Button>
+      leading={<BarButton onClick={onClose}>{t('common.cancel')}</BarButton>}
+      trailing={
+        <BarButton strong onClick={submit} disabled={save.isPending}>
+          {treatment ? t('common.save') : t('common.add')}
+        </BarButton>
       }
     >
+      <p className="mb-4 px-4 text-center text-[13px] text-ink-2">{t('treatmentForm.subtitle')}</p>
       <div className="space-y-5">
         <div>
-          <span className="mb-2 block text-[13px] font-medium text-ink-2">{t('treatmentForm.kind')}</span>
-          <div className="flex flex-wrap gap-2">
+          <span className="mb-1.5 block px-4 text-[13px] text-ink-2">{t('treatmentForm.kind')}</span>
+          <div className="flex flex-wrap gap-2 px-1">
             {KIND_ORDER.map((k) => (
               <Chip key={k} active={kind === k} onClick={() => setKind(k)}>
                 {TREATMENT_LABEL[k]}
@@ -96,7 +97,7 @@ export function TreatmentFormSheet({
           />
         </Field>
         {doctors.length > 0 && (
-          <div className="-mt-3 flex flex-wrap gap-2">
+          <div className="-mt-3 flex flex-wrap gap-2 px-1">
             {doctors.slice(0, 6).map((d) => (
               <Chip key={d} active={doctor === d} onClick={() => setDoctor(d)}>
                 {d}

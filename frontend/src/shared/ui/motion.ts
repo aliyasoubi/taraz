@@ -9,16 +9,6 @@ export const smooth = { type: 'spring', stiffness: 160, damping: 25, mass: 1, re
 /** The curve UIKit uses for sheet presentation, for tweens that must end on time. */
 export const iosEase = [0.32, 0.72, 0, 1] as const
 
-/** Lists appear at once on iOS; rows only fade, without a stagger. */
-export const listVariants = {
-  hidden: {},
-  show: {},
-}
-export const itemVariants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.2 } },
-}
-
 export type StackDirection = 'push' | 'pop' | 'none'
 
 const PUSH = { duration: 0.5, ease: iosEase }

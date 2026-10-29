@@ -1,9 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { faDigits } from '@/shared/lib/format'
 import {
-  addDays,
   formatJ,
   FRIDAY,
   isoToJ,
@@ -11,7 +10,6 @@ import {
   monthLabel,
   monthLength,
   MONTHS,
-  relativeDay,
   shiftMonth,
   todayIso,
   weekdayIndex,
@@ -185,47 +183,5 @@ export function DatePickerSheet({
         </Chip>
       </div>
     </Sheet>
-  )
-}
-
-/** A date row with today / yesterday shortcuts; tap to open the Jalali calendar. */
-export function DateField({
-  value,
-  onChange,
-  label,
-  quick = true,
-}: {
-  value: string
-  onChange: (iso: string) => void
-  label: string
-  quick?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const today = todayIso()
-  return (
-    <div>
-      <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
-      <div className="flex items-center gap-2">
-        <Pressable
-          onClick={() => setOpen(true)}
-          className="flex h-12 flex-1 items-center gap-3 rounded-2xl border border-line bg-surface-2/70 px-4 text-start"
-        >
-          <CalendarDays className="size-5 text-brand" />
-          <span className="flex-1 font-semibold text-ink">{value ? formatJ(value) : t('calendar.choose')}</span>
-          {value && <span className="text-xs text-ink-3">{relativeDay(value)}</span>}
-        </Pressable>
-        {quick && (
-          <>
-            <Chip active={value === today} onClick={() => onChange(today)}>
-              {t('calendar.today')}
-            </Chip>
-            <Chip active={value === addDays(today, -1)} onClick={() => onChange(addDays(today, -1))}>
-              {t('calendar.yesterday')}
-            </Chip>
-          </>
-        )}
-      </div>
-      <DatePickerSheet open={open} value={value} onClose={() => setOpen(false)} onChange={onChange} title={label} />
-    </div>
   )
 }

@@ -5,66 +5,66 @@ import { Link } from 'react-router'
 import type { StatementRow } from '@/shared/api/types'
 import { cx } from '@/shared/lib/cx'
 import { t } from '@/shared/lib/i18n'
-import { Avatar, itemVariants, Money } from '@/shared/ui'
+import { Avatar, Money, smooth } from '@/shared/ui'
 
-/** One patient's month: opening and closing balance, expandable to the movements. */
+/** One patient's month as a list row: opening and closing balance, tap to show the movements. */
 export function StatementCard({ row }: { row: StatementRow }) {
   const [open, setOpen] = useState(false)
   return (
-    <motion.div variants={itemVariants} layout className="overflow-hidden rounded-3xl border border-line bg-surface/70">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 p-3 text-start"
-      >
-        <Avatar name={row.name} size={40} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{row.name}</p>
-          <p className="text-[11px] text-ink-3">
-            {t('common.openingOfMonth')} <Money value={row.opening} unit={false} />
-          </p>
-        </div>
-        <div className="text-end">
-          <Money value={row.closing} tone="auto" className="font-bold" unit={false} />
-          <p className="text-[10px] text-ink-3">{t('common.endOfMonth')}</p>
-        </div>
-        <ChevronDown className={cx('size-4 text-ink-3 transition-transform', open && 'rotate-180')} />
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="grid grid-cols-2 gap-2 border-t border-line p-3 text-[13px]">
-              <Line label={t('reports.charge')} value={row.charged} tone="text-debt" />
-              <Line label={t('reports.payment')} value={row.paid} tone="text-credit" />
-              <Line label={t('reports.discount')} value={row.discounted} />
-              <Line label={t('reports.refund')} value={row.refunded} />
-              {row.pending_cheques > 0 && (
-                <Line label={t('common.pendingCheque')} value={row.pending_cheques} tone="text-warn" />
-              )}
-              <Link
-                to={`/patients/${row.id}`}
-                className="col-span-2 mt-1 rounded-xl bg-surface-2 py-2 text-center font-semibold text-brand"
-              >
-                {t('common.viewLedger')}
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+    <div className="group ps-4">
+      <div className="relative after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-bottom after:scale-y-50 after:bg-line-2 group-last:after:hidden">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center gap-3 py-2.5 pe-4 text-start"
+        >
+          <Avatar name={row.name} size={32} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[17px]">{row.name}</span>
+            <span className="block text-[13px] text-ink-2">
+              {t('common.openingOfMonth')} <Money value={row.opening} compact unit={false} />
+            </span>
+          </span>
+          <span className="text-end">
+            <Money value={row.closing} tone="auto" className="text-[17px]" unit={false} />
+            <span className="block text-[11px] text-ink-2">{t('common.endOfMonth')}</span>
+          </span>
+          <ChevronDown className={cx('size-4 text-ink-3 transition-transform', open && 'rotate-180')} />
+        </button>
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={smooth}
+              className="overflow-hidden"
+            >
+              <div className="space-y-1.5 ps-11 pe-4 pb-3 text-[15px]">
+                <Line label={t('reports.charge')} value={row.charged} tone="text-debt" />
+                <Line label={t('reports.payment')} value={row.paid} tone="text-credit" />
+                <Line label={t('reports.discount')} value={row.discounted} />
+                <Line label={t('reports.refund')} value={row.refunded} />
+                {row.pending_cheques > 0 && (
+                  <Line label={t('common.pendingCheque')} value={row.pending_cheques} tone="text-warn" />
+                )}
+                <Link to={`/patients/${row.id}`} className="block pt-1 text-brand">
+                  {t('common.viewLedger')}
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   )
 }
 
 function Line({ label, value, tone }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-surface-2/60 px-3 py-2">
-      <span className="text-ink-3">{label}</span>
-      <Money value={value} unit={false} className={cx('font-semibold', tone)} />
+    <div className="flex items-center justify-between">
+      <span className="text-ink-2">{label}</span>
+      <Money value={value} unit={false} className={tone} />
     </div>
   )
 }
