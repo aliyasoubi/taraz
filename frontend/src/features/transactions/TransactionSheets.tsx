@@ -44,7 +44,6 @@ export function TransactionSheetsProvider({ children }: { children: ReactNode })
         preset={form.preset}
         editing={form.tx}
         onClose={() => setForm((f) => ({ ...f, open: false }))}
-        onSaved={(tx) => setDetail(tx)}
       />
       <TxDetailSheet tx={detail} onClose={() => setDetail(null)} onEdit={editTransaction} />
     </Ctx.Provider>

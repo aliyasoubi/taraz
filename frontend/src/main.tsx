@@ -37,8 +37,9 @@ function ThemedToaster() {
       position="top-center"
       theme={theme}
       toastOptions={{
-        className: '!rounded-2xl !border-line-2 !font-sans !text-[14px]',
-        style: { background: 'var(--surface-2)', color: 'var(--ink)' },
+        // A translucent iOS banner rather than a bordered card.
+        className: 'glass !bg-glass !rounded-[22px] !border-0 !shadow-float !font-sans !text-[15px] !font-medium',
+        style: { color: 'var(--ink)' },
       }}
       offset={{ top: 'max(env(safe-area-inset-top), 12px)' }}
     />

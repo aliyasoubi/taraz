@@ -1,9 +1,8 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { faDigits } from '@/shared/lib/format'
 import {
-  addDays,
   formatJ,
   FRIDAY,
   isoToJ,
@@ -11,7 +10,6 @@ import {
   monthLabel,
   monthLength,
   MONTHS,
-  relativeDay,
   shiftMonth,
   todayIso,
   weekdayIndex,
@@ -52,7 +50,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
       <div className="mb-3 flex items-center justify-between">
         <Pressable
           onClick={() => go(-1)}
-          className="grid size-10 place-items-center rounded-full bg-surface-2"
+          className="grid size-10 place-items-center rounded-full text-brand"
           aria-label={t('calendar.prevMonth')}
         >
           <ChevronRight className="size-5" />
@@ -60,13 +58,13 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
         <button
           type="button"
           onClick={() => setMode((m) => (m === 'days' ? 'months' : 'days'))}
-          className="rounded-full px-4 py-2 text-base font-bold text-ink hover:bg-surface-2"
+          className="rounded-full px-4 py-2 text-[17px] font-semibold text-ink"
         >
           {mode === 'days' ? monthLabel(view.jy, view.jm) : faDigits(view.jy)}
         </button>
         <Pressable
           onClick={() => go(1)}
-          className="grid size-10 place-items-center rounded-full bg-surface-2"
+          className="grid size-10 place-items-center rounded-full text-brand"
           aria-label={t('calendar.nextMonth')}
         >
           <ChevronLeft className="size-5" />
@@ -87,8 +85,8 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
                 setMode('days')
               }}
               className={cx(
-                'h-12 rounded-2xl text-sm font-semibold',
-                view.jm === i + 1 ? 'text-white bg-brand-gradient' : 'bg-surface-2 text-ink-2',
+                'h-11 rounded-[10px] text-[15px] font-medium',
+                view.jm === i + 1 ? 'bg-brand text-white' : 'bg-surface text-ink',
               )}
             >
               {name}
@@ -97,7 +95,7 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
         </div>
       ) : (
         <>
-          <div className="mb-1 grid grid-cols-7 text-center text-xs font-semibold text-ink-3">
+          <div className="mb-1 grid grid-cols-7 text-center text-[13px] font-semibold text-ink-3">
             {WEEKDAYS.map((w, i) => (
               <div key={w} className={cx('py-1', i === FRIDAY && 'text-debt/80')}>
                 {w}
@@ -121,11 +119,11 @@ function CalendarGrid({ value, onPick }: { value: string; onPick: (iso: string) 
                       key={iso}
                       onClick={() => onPick(iso)}
                       className={cx(
-                        'relative mx-auto grid size-11 place-items-center rounded-full text-[15px] font-semibold',
+                        'relative mx-auto grid size-11 place-items-center rounded-full text-[19px]',
                         iso === value
-                          ? 'text-white shadow-lg shadow-brand/40 bg-brand-gradient'
+                          ? 'bg-brand font-semibold text-white'
                           : iso === today
-                            ? 'text-brand ring-1 ring-brand/50'
+                            ? 'font-semibold text-brand'
                             : weekdayIndex(iso) === FRIDAY
                               ? 'text-debt/80'
                               : 'text-ink',
@@ -185,47 +183,5 @@ export function DatePickerSheet({
         </Chip>
       </div>
     </Sheet>
-  )
-}
-
-/** A date row with today / yesterday shortcuts; tap to open the Jalali calendar. */
-export function DateField({
-  value,
-  onChange,
-  label,
-  quick = true,
-}: {
-  value: string
-  onChange: (iso: string) => void
-  label: string
-  quick?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const today = todayIso()
-  return (
-    <div>
-      <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
-      <div className="flex items-center gap-2">
-        <Pressable
-          onClick={() => setOpen(true)}
-          className="flex h-12 flex-1 items-center gap-3 rounded-2xl border border-line bg-surface-2/70 px-4 text-start"
-        >
-          <CalendarDays className="size-5 text-brand" />
-          <span className="flex-1 font-semibold text-ink">{value ? formatJ(value) : t('calendar.choose')}</span>
-          {value && <span className="text-xs text-ink-3">{relativeDay(value)}</span>}
-        </Pressable>
-        {quick && (
-          <>
-            <Chip active={value === today} onClick={() => onChange(today)}>
-              {t('calendar.today')}
-            </Chip>
-            <Chip active={value === addDays(today, -1)} onClick={() => onChange(addDays(today, -1))}>
-              {t('calendar.yesterday')}
-            </Chip>
-          </>
-        )}
-      </div>
-      <DatePickerSheet open={open} value={value} onClose={() => setOpen(false)} onChange={onChange} title={label} />
-    </div>
   )
 }

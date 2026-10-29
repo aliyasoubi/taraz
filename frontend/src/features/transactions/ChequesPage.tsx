@@ -1,7 +1,6 @@
-import { motion } from 'motion/react'
 import { CalendarCheck2 } from 'lucide-react'
 import { useState } from 'react'
-import { Card, Empty, listVariants, Money, PageHeader, Segmented, Skeleton } from '@/shared/ui'
+import { Empty, ListRow, ListSection, Money, PageHeader, Segmented, Skeleton } from '@/shared/ui'
 import { TxRow } from '@/features/transactions/components/TxRow'
 import { faDigits } from '@/shared/lib/format'
 import { daysBetween, todayIso } from '@/shared/lib/jalali'
@@ -20,8 +19,7 @@ export function ChequesPage() {
 
   return (
     <div>
-      <PageHeader back title={t('cheques.title')} subtitle={t('cheques.subtitle')} />
-      <div className="space-y-4 px-4">
+      <PageHeader back title={t('cheques.title')} subtitle={t('cheques.subtitle')}>
         <Segmented
           value={status}
           onChange={setStatus}
@@ -31,38 +29,35 @@ export function ChequesPage() {
             { value: 'bounced', label: t('cheques.bounced') },
           ]}
         />
+      </PageHeader>
+      <div className="px-4">
         {data && (
-          <div className="flex items-center justify-between rounded-3xl border border-line bg-surface/70 px-4 py-3">
-            <span className="text-sm text-ink-2">{t('common.chequesCount', { n: faDigits(data.total) })}</span>
-            <Money value={data.sum_amount} className="text-lg font-extrabold" />
-          </div>
+          <ListSection className="mt-2">
+            <ListRow
+              title={t('common.chequesCount', { n: faDigits(data.total) })}
+              value={<Money value={data.sum_amount} className="text-ink" />}
+            />
+          </ListSection>
         )}
         {isLoading ? (
-          <Skeleton className="h-60" />
+          <Skeleton className="mt-8 h-60" />
         ) : items.length === 0 ? (
-          <Card>
-            <Empty icon={<CalendarCheck2 className="size-7" />} title={t('cheques.empty')} />
-          </Card>
+          <Empty icon={<CalendarCheck2 />} title={t('cheques.empty')} />
         ) : (
           <>
             {overdue.length > 0 && (
-              <Card className="border-debt/30 p-1.5">
-                <p className="px-3 pt-2.5 pb-1 text-[13px] font-bold text-debt">{t('cheques.overdue')}</p>
-                <motion.div variants={listVariants} initial="hidden" animate="show">
-                  {overdue.map((tx) => (
-                    <TxRow key={tx.id} tx={tx} showPatient />
-                  ))}
-                </motion.div>
-              </Card>
+              <ListSection header={<span className="text-debt">{t('cheques.overdue')}</span>}>
+                {overdue.map((tx) => (
+                  <TxRow key={tx.id} tx={tx} showPatient />
+                ))}
+              </ListSection>
             )}
             {upcoming.length > 0 && (
-              <Card className="p-1.5">
-                <motion.div variants={listVariants} initial="hidden" animate="show">
-                  {upcoming.map((tx) => (
-                    <TxRow key={tx.id} tx={tx} showPatient />
-                  ))}
-                </motion.div>
-              </Card>
+              <ListSection>
+                {upcoming.map((tx) => (
+                  <TxRow key={tx.id} tx={tx} showPatient />
+                ))}
+              </ListSection>
             )}
           </>
         )}

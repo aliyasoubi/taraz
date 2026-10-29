@@ -14,15 +14,13 @@ export function Empty({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center px-6 py-12 text-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center px-8 py-14 text-center"
     >
-      <div className="mb-4 grid size-16 place-items-center rounded-3xl border border-line bg-surface-2 text-ink-3">
-        {icon}
-      </div>
-      <p className="font-semibold text-ink">{title}</p>
-      {hint && <p className="mt-1 text-sm leading-6 text-ink-3">{hint}</p>}
+      <div className="mb-3 text-ink-3 [&>svg]:size-12 [&>svg]:stroke-[1.5]">{icon}</div>
+      <p className="text-[20px] font-bold text-ink">{title}</p>
+      {hint && <p className="mt-1.5 text-[15px] leading-6 text-ink-2">{hint}</p>}
       {action && <div className="mt-5">{action}</div>}
     </motion.div>
   )

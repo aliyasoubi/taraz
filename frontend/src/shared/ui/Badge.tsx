@@ -9,16 +9,16 @@ export function Badge({
   children: ReactNode
 }) {
   const tones = {
-    neutral: 'bg-surface-2 text-ink-2 border-line',
-    debt: 'bg-debt/12 text-debt border-debt/20',
-    credit: 'bg-credit/12 text-credit border-credit/20',
-    warn: 'bg-warn/12 text-warn border-warn/25',
-    info: 'bg-info/12 text-info border-info/20',
+    neutral: 'bg-fill text-ink-2',
+    debt: 'bg-debt/15 text-debt',
+    credit: 'bg-credit/15 text-credit',
+    warn: 'bg-warn/15 text-warn',
+    info: 'bg-info/15 text-info',
   }
   return (
     <span
       className={cx(
-        'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium whitespace-nowrap',
         tones[tone],
       )}
     >

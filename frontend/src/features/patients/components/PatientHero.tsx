@@ -1,18 +1,14 @@
 import { motion } from 'motion/react'
-import { Phone } from 'lucide-react'
 import type { BalanceFields, PatientDetail } from '@/shared/api/types'
 import { cx } from '@/shared/lib/cx'
-import { balanceTone, faDigits, TONE_LABEL } from '@/shared/lib/format'
+import { faDigits } from '@/shared/lib/format'
 import { t } from '@/shared/lib/i18n'
-import { AnimatedMoney, Avatar, Badge, Money } from '@/shared/ui'
+import { AnimatedMoney, Avatar, Money, smooth } from '@/shared/ui'
 
-const TONE_CARD = {
-  debt: 'border-debt/25 bg-gradient-to-br from-debt/18 via-surface to-surface',
-  credit: 'border-credit/25 bg-gradient-to-br from-credit/18 via-surface to-surface',
-  settled: 'border-line bg-gradient-to-br from-brand/14 via-surface to-surface',
-} as const
-
-/** The patient's balance card — for the whole patient, or one treatment case (`view`). */
+/**
+ * The top of a patient's screen, laid out like a contact card: monogram, name,
+ * phone, then what they owe — for the whole patient, or one treatment case (`view`).
+ */
 export function PatientHero({
   patient,
   view,
@@ -22,70 +18,56 @@ export function PatientHero({
   view: BalanceFields
   caseTitle?: string
 }) {
-  const tone = balanceTone(patient.balance)
   const paidShare = view.charged > 0 ? Math.min(1, (view.paid + view.discounted) / view.charged) : 0
+  const label =
+    view.balance > 0 ? t('patient.owes') : view.balance < 0 ? t('patient.hasCredit') : t('patient.settledUp')
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cx('relative overflow-hidden rounded-[30px] border p-5', TONE_CARD[tone])}
-    >
-      <div className="flex items-center gap-3">
-        <Avatar name={patient.name} size={54} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <Badge tone={tone === 'settled' ? 'neutral' : tone}>{TONE_LABEL[tone]}</Badge>
-            {patient.is_archived && <Badge>{t('common.archived')}</Badge>}
-          </div>
-          {patient.phone && (
-            <a
-              href={`tel:${patient.phone}`}
-              className="mt-1 inline-flex items-center gap-1 text-[13px] text-ink-3"
-              dir="ltr"
-            >
-              <Phone className="size-3.5" /> {faDigits(patient.phone)}
-            </a>
-          )}
-        </div>
-      </div>
-
-      <p className="mt-5 text-[13px] text-ink-3">
-        {caseTitle ? t('patient.caseBalance', { title: caseTitle }) : t('patient.balance')}
-      </p>
-      <AnimatedMoney
-        value={Math.abs(view.balance)}
-        maxSize={38}
-        className={cx(
-          'leading-tight font-black tracking-tight',
-          view.balance > 0 ? 'text-debt' : view.balance < 0 ? 'text-credit' : 'text-ink',
+    <>
+      <header className="flex flex-col items-center text-center">
+        <Avatar name={patient.name} size={84} />
+        <h1 className="mt-3 text-[28px] leading-tight font-bold">{patient.name}</h1>
+        {patient.phone && (
+          <a href={`tel:${patient.phone}`} className="mt-1 text-[15px] text-brand" dir="ltr">
+            {faDigits(patient.phone)}
+          </a>
         )}
-      />
-      {view.pending_cheques > 0 && (
-        <p className="mt-1 text-[12px] text-warn">
-          <Money value={view.pending_cheques} className="font-semibold" /> {t('patient.pendingAfter')}{' '}
-          <Money value={view.balance - view.pending_cheques} tone="auto" className="font-semibold" />
-        </p>
-      )}
+        {patient.is_archived && <p className="mt-1 text-[13px] text-ink-2">{t('common.archived')}</p>}
+      </header>
 
-      <div className="mt-4">
-        <div className="h-2 overflow-hidden rounded-full bg-line">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-l from-credit to-info"
-            initial={{ width: 0 }}
-            animate={{ width: `${paidShare * 100}%` }}
-            transition={{ type: 'spring', stiffness: 80, damping: 20, delay: 0.2 }}
-          />
-        </div>
-        <div className="mt-2 flex justify-between text-[12px] text-ink-3">
-          <span>
-            {t('patient.paid')} <Money value={view.paid} className="font-semibold text-ink-2" unit={false} />
-          </span>
-          <span>
-            {t('patient.charged')} <Money value={view.charged} className="font-semibold text-ink-2" unit={false} />
-          </span>
-        </div>
+      <div className="mt-6 rounded-[12px] bg-surface px-4 pt-4 pb-4 text-center">
+        <p className="text-[13px] text-ink-2">{caseTitle ? t('patient.caseBalance', { title: caseTitle }) : label}</p>
+        <AnimatedMoney
+          value={Math.abs(view.balance)}
+          maxSize={40}
+          className={cx(
+            'mt-0.5 font-bold tracking-tight',
+            view.balance > 0 ? 'text-debt' : view.balance < 0 ? 'text-credit' : 'text-ink',
+          )}
+        />
+        {view.pending_cheques > 0 && (
+          <p className="mt-1 text-[13px] text-warn">
+            <Money value={view.pending_cheques} /> {t('patient.pendingAfter')}{' '}
+            <Money value={view.balance - view.pending_cheques} />
+          </p>
+        )}
+        {view.charged > 0 && (
+          <div className="mt-4">
+            <div className="h-1 overflow-hidden rounded-full bg-fill">
+              <motion.div
+                className="h-full rounded-full bg-credit"
+                initial={{ width: 0 }}
+                animate={{ width: `${paidShare * 100}%` }}
+                transition={{ ...smooth, delay: 0.15 }}
+              />
+            </div>
+            <p className="mt-2 text-[13px] text-ink-2">
+              {t('patient.paid')} <Money value={view.paid + view.discounted} unit={false} className="text-ink" />{' '}
+              {t('patient.of')} <Money value={view.charged} unit={false} className="text-ink" />
+            </p>
+          </div>
+        )}
       </div>
-    </motion.div>
+    </>
   )
 }

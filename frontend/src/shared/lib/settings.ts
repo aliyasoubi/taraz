@@ -9,7 +9,7 @@ interface Prefs {
   hideAmounts: boolean
 }
 
-const DEFAULTS: Prefs = { unit: 'rial', theme: 'dark', hideAmounts: false }
+const DEFAULTS: Prefs = { unit: 'rial', theme: 'system', hideAmounts: false }
 const KEYS = { unit: 'taraz.unit', theme: 'taraz.theme', hideAmounts: 'taraz.hide' } as const
 
 // Per-device conveniences only. Storage can be unavailable (private mode), so every access is guarded.
@@ -35,7 +35,7 @@ export function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = resolved
   document
     .querySelectorAll('meta[name="theme-color"]')
-    .forEach((m) => m.setAttribute('content', resolved === 'light' ? '#f5f4fb' : '#07060d'))
+    .forEach((m) => m.setAttribute('content', resolved === 'light' ? '#f2f2f7' : '#000000'))
 }
 
 export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]): void {

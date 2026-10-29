@@ -1,18 +1,20 @@
-import { Archive, ArchiveRestore, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, ArrowUpRight, BadgePercent, FolderPlus, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useDeletePatient, useSavePatient } from '@/features/patients/api'
-import type { PatientDetail } from '@/shared/api/types'
+import type { PatientDetail, TxType } from '@/shared/api/types'
 import { errorMessage } from '@/shared/lib/errors'
 import { faDigits } from '@/shared/lib/format'
 import { t } from '@/shared/lib/i18n'
-import { ConfirmSheet, MenuItem, Sheet } from '@/shared/ui'
+import { ConfirmSheet, ListIcon, ListRow, ListSection, Sheet } from '@/shared/ui'
 
-/** Options for a patient: edit, archive, delete (with confirmation). */
+/** The ⋯ menu: the less common entries, the case and the patient's own settings. */
 export function PatientMenuSheet({
   patient,
   open,
   confirmingDelete,
+  onAdd,
+  onNewCase,
   onEdit,
   onAskDelete,
   onClose,
@@ -20,6 +22,8 @@ export function PatientMenuSheet({
   patient: PatientDetail
   open: boolean
   confirmingDelete: boolean
+  onAdd: (type: TxType) => void
+  onNewCase: () => void
   onEdit: () => void
   onAskDelete: () => void
   onClose: () => void
@@ -44,7 +48,7 @@ export function PatientMenuSheet({
     remove.mutate(patient.id, {
       onSuccess: () => {
         toast.success(t('patient.deleted'))
-        navigate('/patients', { replace: true })
+        navigate('/', { replace: true })
       },
       onError: (e) => toast.error(errorMessage(e)),
     })
@@ -52,15 +56,63 @@ export function PatientMenuSheet({
   return (
     <>
       <Sheet open={open} onClose={onClose} title={patient.name}>
-        <div className="space-y-2">
-          <MenuItem icon={<Pencil className="size-5" />} label={t('patient.editInfo')} onClick={onEdit} />
-          <MenuItem
-            icon={patient.is_archived ? <ArchiveRestore className="size-5" /> : <Archive className="size-5" />}
-            label={patient.is_archived ? t('common.unarchive') : t('patient.archive')}
+        <ListSection className="mt-1">
+          <ListRow
+            icon={
+              <ListIcon tone="info">
+                <BadgePercent />
+              </ListIcon>
+            }
+            title={t('patient.addDiscount')}
+            onClick={() => onAdd('discount')}
+          />
+          <ListRow
+            icon={
+              <ListIcon tone="brand">
+                <ArrowUpRight />
+              </ListIcon>
+            }
+            title={t('patient.addRefund')}
+            onClick={() => onAdd('refund')}
+          />
+          <ListRow
+            icon={
+              <ListIcon tone="credit">
+                <FolderPlus />
+              </ListIcon>
+            }
+            title={t('common.newCase')}
+            onClick={onNewCase}
+          />
+        </ListSection>
+        <ListSection className="mt-6">
+          <ListRow
+            icon={
+              <ListIcon tone="gray">
+                <Pencil />
+              </ListIcon>
+            }
+            title={t('patient.editInfo')}
+            onClick={onEdit}
+          />
+          <ListRow
+            icon={<ListIcon tone="gray">{patient.is_archived ? <ArchiveRestore /> : <Archive />}</ListIcon>}
+            title={patient.is_archived ? t('common.unarchive') : t('patient.archive')}
             onClick={toggleArchive}
           />
-          <MenuItem icon={<Trash2 className="size-5" />} label={t('patient.deleteMenu')} danger onClick={onAskDelete} />
-        </div>
+        </ListSection>
+        <ListSection className="mt-6">
+          <ListRow
+            icon={
+              <ListIcon tone="debt">
+                <Trash2 />
+              </ListIcon>
+            }
+            title={t('patient.deleteMenu')}
+            destructive
+            onClick={onAskDelete}
+          />
+        </ListSection>
       </Sheet>
       <ConfirmSheet
         open={confirmingDelete}
