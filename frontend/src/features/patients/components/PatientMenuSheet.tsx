@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, ArrowUpRight, BadgePercent, FolderPlus, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, BadgePercent, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useDeletePatient, useSavePatient } from '@/features/patients/api'
@@ -8,13 +8,12 @@ import { faDigits } from '@/shared/lib/format'
 import { t } from '@/shared/lib/i18n'
 import { ConfirmSheet, ListIcon, ListRow, ListSection, Sheet } from '@/shared/ui'
 
-/** The ⋯ menu: the less common entries, the case and the patient's own settings. */
+/** The ⋯ menu: a discount, and the patient's own settings. */
 export function PatientMenuSheet({
   patient,
   open,
   confirmingDelete,
   onAdd,
-  onNewCase,
   onEdit,
   onAskDelete,
   onClose,
@@ -23,7 +22,6 @@ export function PatientMenuSheet({
   open: boolean
   confirmingDelete: boolean
   onAdd: (type: TxType) => void
-  onNewCase: () => void
   onEdit: () => void
   onAskDelete: () => void
   onClose: () => void
@@ -65,24 +63,6 @@ export function PatientMenuSheet({
             }
             title={t('patient.addDiscount')}
             onClick={() => onAdd('discount')}
-          />
-          <ListRow
-            icon={
-              <ListIcon tone="brand">
-                <ArrowUpRight />
-              </ListIcon>
-            }
-            title={t('patient.addRefund')}
-            onClick={() => onAdd('refund')}
-          />
-          <ListRow
-            icon={
-              <ListIcon tone="credit">
-                <FolderPlus />
-              </ListIcon>
-            }
-            title={t('common.newCase')}
-            onClick={onNewCase}
           />
         </ListSection>
         <ListSection className="mt-6">

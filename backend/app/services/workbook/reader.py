@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 
 from app.core.i18n import t
 from app.models import AccountKind, ChequeStatus, PaymentMethod, TreatmentKind, TxType
-from app.services.legacy.cells import parse_amount, parse_date, text_of
+from app.services.spreadsheet.cells import parse_amount, parse_date, text_of
 from app.services.workbook.model import AccountEntry, Line, PatientEntry, StandardBook
 from app.services.workbook.writer import label
 from app.utils.text import fold

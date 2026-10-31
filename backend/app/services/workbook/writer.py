@@ -14,7 +14,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.core.i18n import t
 from app.models import AccountKind, ChequeStatus, PaymentMethod, TreatmentKind, TxType
-from app.services.legacy.cells import jalali_text
+from app.services.spreadsheet.cells import jalali_text
 from app.services.workbook.model import StandardBook
 
 HEADER_FILL = PatternFill("solid", fgColor="4C1D95")

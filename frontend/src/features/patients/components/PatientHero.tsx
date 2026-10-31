@@ -1,26 +1,15 @@
 import { motion } from 'motion/react'
-import type { BalanceFields, PatientDetail } from '@/shared/api/types'
+import type { PatientDetail } from '@/shared/api/types'
 import { cx } from '@/shared/lib/cx'
 import { faDigits } from '@/shared/lib/format'
 import { t } from '@/shared/lib/i18n'
 import { AnimatedMoney, Avatar, Money, smooth } from '@/shared/ui'
 
-/**
- * The top of a patient's screen, laid out like a contact card: monogram, name,
- * phone, then what they owe — for the whole patient, or one treatment case (`view`).
- */
-export function PatientHero({
-  patient,
-  view,
-  caseTitle,
-}: {
-  patient: PatientDetail
-  view: BalanceFields
-  caseTitle?: string
-}) {
-  const paidShare = view.charged > 0 ? Math.min(1, (view.paid + view.discounted) / view.charged) : 0
+/** The top of a patient's screen, laid out like a contact card: monogram, name, phone, then what they owe. */
+export function PatientHero({ patient }: { patient: PatientDetail }) {
+  const paidShare = patient.charged > 0 ? Math.min(1, (patient.paid + patient.discounted) / patient.charged) : 0
   const label =
-    view.balance > 0 ? t('patient.owes') : view.balance < 0 ? t('patient.hasCredit') : t('patient.settledUp')
+    patient.balance > 0 ? t('patient.owes') : patient.balance < 0 ? t('patient.hasCredit') : t('patient.settledUp')
 
   return (
     <>
@@ -36,22 +25,16 @@ export function PatientHero({
       </header>
 
       <div className="mt-6 rounded-[12px] bg-surface px-4 pt-4 pb-4 text-center">
-        <p className="text-[13px] text-ink-2">{caseTitle ? t('patient.caseBalance', { title: caseTitle }) : label}</p>
+        <p className="text-[13px] text-ink-2">{label}</p>
         <AnimatedMoney
-          value={Math.abs(view.balance)}
+          value={Math.abs(patient.balance)}
           maxSize={40}
           className={cx(
             'mt-0.5 font-bold tracking-tight',
-            view.balance > 0 ? 'text-debt' : view.balance < 0 ? 'text-credit' : 'text-ink',
+            patient.balance > 0 ? 'text-debt' : patient.balance < 0 ? 'text-credit' : 'text-ink',
           )}
         />
-        {view.pending_cheques > 0 && (
-          <p className="mt-1 text-[13px] text-warn">
-            <Money value={view.pending_cheques} /> {t('patient.pendingAfter')}{' '}
-            <Money value={view.balance - view.pending_cheques} />
-          </p>
-        )}
-        {view.charged > 0 && (
+        {patient.charged > 0 && (
           <div className="mt-4">
             <div className="h-1 overflow-hidden rounded-full bg-fill">
               <motion.div
@@ -62,8 +45,8 @@ export function PatientHero({
               />
             </div>
             <p className="mt-2 text-[13px] text-ink-2">
-              {t('patient.paid')} <Money value={view.paid + view.discounted} unit={false} className="text-ink" />{' '}
-              {t('patient.of')} <Money value={view.charged} unit={false} className="text-ink" />
+              {t('patient.paid')} <Money value={patient.paid + patient.discounted} unit={false} className="text-ink" />{' '}
+              {t('patient.of')} <Money value={patient.charged} unit={false} className="text-ink" />
             </p>
           </div>
         )}

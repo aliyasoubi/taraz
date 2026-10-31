@@ -106,7 +106,7 @@ def parse_date(
     def fixed(on: date | None, key: str) -> ParsedDate:
         on = on or fallback
         shown = jalali_text(on) if on else "?"
-        return ParsedDate(on, t(f"legacy.issues.{key}", raw=raw or "-", fixed=shown))
+        return ParsedDate(on, t(f"spreadsheet.issues.{key}", raw=raw or "-", fixed=shown))
 
     if len(parts) < 2:
         return fixed(None, "missingDate" if not raw else "badDate")
@@ -130,7 +130,7 @@ def parse_date(
     clean = isinstance(cell, str) and re.fullmatch(r"\d{4}[-/]\d{2}[-/]\d{2}", ascii_digits(raw))
     if clean and not repaired:
         return ParsedDate(on)
-    return ParsedDate(on, t("legacy.issues.badDate", raw=raw, fixed=jalali_text(on)))
+    return ParsedDate(on, t("spreadsheet.issues.badDate", raw=raw, fixed=jalali_text(on)))
 
 
 # ── Names ────────────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ def parse_date(
 
 def _suffix_patterns() -> list[tuple[re.Pattern[str], TreatmentKind]]:
     patterns = []
-    for kind, words in t("legacy.caseSuffixes").items():
+    for kind, words in t("spreadsheet.caseSuffixes").items():
         alternatives = "|".join(re.escape(w) for w in sorted(words, key=len, reverse=True))
         # "…imp" is often glued to the surname; the Persian words come after a space.
         patterns.append(

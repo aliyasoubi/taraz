@@ -110,39 +110,37 @@ patient-book's Caddy, and checks `https://taraz.dentixo.ir`.
 
 On the iPhone: open `https://taraz.dentixo.ir` in Safari → Share → **Add to Home Screen**.
 
-## 5. Move the old workbook in
+## 5. Import the month sheet
 
-On your Mac, from `backend/` (the old workbook never needs to reach the server):
-
-```bash
-.venv/bin/python -m app.cli standardize-legacy /path/to/old-workbook.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
-```
-
-Review `data/import/taraz-standard.xlsx` (see "Reviewing the standard
-workbook" in the main README), then copy it up and import:
+Copy the workbook up from your Mac:
 
 ```bash
-scp backend/data/import/taraz-standard.xlsx <user>@<vps>:/tmp/taraz-standard.xlsx
+scp aban.xlsx <user>@<vps>:/tmp/month.xlsx
 ```
 
 The container's filesystem is read-only, so the file is piped in (`-` reads
-stdin) rather than copied:
+stdin). The first month starts the ledger afresh with `--replace`; take a
+backup first:
 
 ```bash
-cd /opt/taraz && docker compose exec -T taraz python -m app.cli import-workbook - --dry-run < /tmp/taraz-standard.xlsx
+cd /opt/taraz && ./ops/backup.sh
 ```
 
 ```bash
-docker compose exec -T taraz python -m app.cli import-workbook - < /tmp/taraz-standard.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-08 --replace --dry-run < /tmp/month.xlsx
 ```
 
 ```bash
-rm /tmp/taraz-standard.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-08 --replace < /tmp/month.xlsx
 ```
 
-The import is all-or-nothing and refuses to run into a ledger that already has
-transactions. To redo it, restore the pre-import backup (below) or wipe the
-fresh ledger with `docker compose down -v` before anyone has entered real data.
+Each later month (Azar = `1405-09`, …) goes on top without `--replace`. Each
+patient then continues from their balance in the app. A month that already
+has entries is refused, so nothing is counted twice.
+
+```bash
+rm /tmp/month.xlsx
+```
 
 ## Backups
 

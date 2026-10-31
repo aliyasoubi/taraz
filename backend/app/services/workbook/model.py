@@ -1,6 +1,6 @@
 """In-memory form of the standard workbook.
 
-The legacy converter produces a `StandardBook`, the writer saves it as Excel for
+The spreadsheet converter produces a `StandardBook`, the writer saves it as Excel for
 review, the reader loads an edited copy back, and the importer stores it.
 """
 

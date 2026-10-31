@@ -80,3 +80,16 @@ class MonthlyReport(BaseModel):
     by_method: list[BreakdownRow]
     rows: list[StatementRow]
     cheques_due: list[TransactionOut]
+
+
+class SheetRow(TransactionOut):
+    balance_after: int  # what the patient owes right after this row, as the sheet's balance column
+
+
+class MonthSheet(BaseModel):
+    """The month's entries in date order: the practice's month sheet, rebuilt from the ledger."""
+
+    month: MonthRef
+    rows: list[SheetRow]
+    received: int
+    charged: int

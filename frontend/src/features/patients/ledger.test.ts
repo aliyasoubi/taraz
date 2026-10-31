@@ -14,6 +14,7 @@ function tx(partial: Partial<Transaction>): Transaction {
     amount: 100,
     occurred_on: '2026-10-01',
     description: null,
+    doctor: null,
     payer_name: null,
     account_id: null,
     account_title: null,

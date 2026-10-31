@@ -1,4 +1,4 @@
-"""Excel exports: the month-end statement, and a full backup of every row.
+"""Excel exports: the month sheet, the month-end statement, and a full backup of every row.
 
 Sheet names, headers and labels come from the locale file (``app/core/i18n/fa.json``).
 """
@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.i18n import t
 from app.models import Account, Patient, Transaction, Treatment, TxType
-from app.schemas.reports import MonthlyReport
+from app.schemas.reports import MonthlyReport, MonthSheet
 from app.services import ledger
 from app.services.transactions import tx_select
 from app.utils.jalali import to_jalali_str
@@ -83,6 +83,7 @@ def _tx_rows(txs: Iterable[Transaction]) -> Iterable[list[Any]]:
             to_jalali_str(tx.cheque_due_on),
             _label("cheque", tx.cheque_status),
             tx.description or "",
+            tx.doctor or "",
         ]
 
 
@@ -232,4 +233,26 @@ def full_backup_xlsx(db: Session) -> bytes:
             for a in accounts
         ),
     )
+    return _to_bytes(wb)
+
+
+def month_sheet_xlsx(sheet: MonthSheet) -> bytes:
+    """The month laid out like the practice's own sheet, under the headers the importer reads."""
+    wb = Workbook()
+    h = t("spreadsheet.headers")
+    fields = ["name", "service", "balance", "payment", "date", "account", "doctor", "payer"]
+    rows = (
+        [
+            r.patient_name,
+            r.description or "",
+            r.balance_after,
+            r.amount if r.type == TxType.PAYMENT else 0,
+            to_jalali_str(r.occurred_on),
+            r.account_title or "",
+            r.doctor or "",
+            r.payer_name or "",
+        ]
+        for r in sheet.rows
+    )
+    _sheet(wb, sheet.month.label, [h[f][0] for f in fields], rows, money_cols=(3, 4))
     return _to_bytes(wb)

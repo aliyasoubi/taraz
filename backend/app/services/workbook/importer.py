@@ -3,14 +3,14 @@
 from dataclasses import dataclass
 from itertools import cycle
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError
 from app.core.i18n import t
 from app.models import Account, AccountKind, Patient, Transaction, Treatment, TreatmentKind
 from app.services import ledger
-from app.services.legacy.cells import name_key
+from app.services.spreadsheet.cells import name_key
 from app.services.transactions import has_transactions, normalize
 from app.services.workbook.model import StandardBook
 from app.utils.text import fold, tidy
@@ -94,7 +94,8 @@ class _Importer:
                 type=line.type,
                 amount=line.amount,
                 occurred_on=line.on,
-                description=(" — ".join(x for x in (line.description, line.doctor) if x) or None),
+                description=line.description,
+                doctor=line.doctor,
                 payer_name=line.payer,
                 account_id=account.id if account else None,
                 method=line.method,
@@ -117,16 +118,31 @@ class _Importer:
         )
 
 
+def _clear_ledger(db: Session) -> None:
+    for model in (Transaction, Treatment, Patient, Account):
+        db.execute(delete(model))
+    db.flush()
+
+
 def import_book(
-    db: Session, book: StandardBook, *, dry_run: bool = False, force: bool = False
+    db: Session,
+    book: StandardBook,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+    replace: bool = False,
 ) -> ImportSummary:
     """Writes every row in one transaction.
 
+    `replace` first removes the whole ledger (patients, cases, accounts and
+    entries), so a corrected workbook can take the place of an earlier import.
     A dry run, or any error, leaves the database untouched.
     """
-    if has_transactions(db) and not force:
+    if has_transactions(db) and not (force or replace):
         raise ConflictError("ledger_not_empty")
     try:
+        if replace:
+            _clear_ledger(db)
         summary = _Importer(db, book).run()
     except Exception:
         db.rollback()

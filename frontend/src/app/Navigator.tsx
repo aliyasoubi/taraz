@@ -5,12 +5,10 @@ import { directionOf, nextStack, swipeCompletes } from '@/app/navigation'
 import { iosEase, Screen, stackVariants, type StackDirection } from '@/shared/ui'
 import { AccountPage } from '@/features/accounts/AccountPage'
 import { AccountsPage } from '@/features/accounts/AccountsPage'
-import { ChequesPage } from '@/features/transactions/ChequesPage'
 import { MonthPage } from '@/features/reports/MonthPage'
 import { PatientPage } from '@/features/patients/PatientPage'
 import { PatientsPage } from '@/features/patients/PatientsPage'
-import { ReceiptsPage } from '@/features/transactions/ReceiptsPage'
-import { ReportsPage } from '@/features/reports/ReportsPage'
+import { MonthSheetPage } from '@/features/sheet/MonthSheetPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 
 function AppRoutes({ location }: { location: string }) {
@@ -18,12 +16,10 @@ function AppRoutes({ location }: { location: string }) {
     <Routes location={location}>
       <Route path="/" element={<PatientsPage />} />
       <Route path="/patients/:id" element={<PatientPage />} />
-      <Route path="/receipts" element={<ReceiptsPage />} />
+      <Route path="/sheet" element={<MonthSheetPage />} />
       <Route path="/month" element={<MonthPage />} />
       <Route path="/accounts" element={<AccountsPage />} />
       <Route path="/accounts/:id" element={<AccountPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
-      <Route path="/cheques" element={<ChequesPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

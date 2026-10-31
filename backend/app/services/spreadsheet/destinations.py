@@ -1,4 +1,4 @@
-"""Reading the old "bank-account" and notes columns.
+"""Reading the "bank - account" and notes columns.
 
 A cell may name the account the money went to ("Blu – Ziba", "POS Tejarat", a
 third party), the treating doctor, the person who paid, the payment method
@@ -7,11 +7,12 @@ commas. `Accounts` collapses the many spellings of one account into one entry.
 """
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from app.core.i18n import t
 from app.models import AccountKind, PaymentMethod
-from app.services.legacy.cells import ascii_digits, text_of
+from app.services.spreadsheet.cells import ascii_digits, text_of
 from app.services.workbook.model import AccountEntry
 from app.utils.text import fold, tidy
 
@@ -49,25 +50,25 @@ class Accounts:
         self._pool: dict[str, AccountEntry] = {}  # every account spelling seen, by identity key
         self._entries: dict[int, AccountEntry] = {}  # the ones a ledger line uses
         self._banks: list[tuple[str, str]] = sorted(
-            ((fold(syn), bank) for bank, syns in t("legacy.banks").items() for syn in syns),
+            ((fold(syn), bank) for bank, syns in t("spreadsheet.banks").items() for syn in syns),
             key=lambda pair: len(pair[0]),
             reverse=True,
         )
-        self._pos = _words("legacy.posWords")
-        self._notes = _words("legacy.noteWords")
-        self._doctor = fold(t("legacy.doctor"))
-        self._misters = [fold(w) for w in t("legacy.mister")]
-        self._cheque = fold(t("legacy.cheque"))
-        self._dollar = fold(t("legacy.dollar"))
-        self._paid_by = fold(t("legacy.paidBy"))
-        self._to_account = fold(t("legacy.toAccount"))
-        self._to_words = {fold(w) for w in t("legacy.toWords")}
+        self._pos = _words("spreadsheet.posWords")
+        self._notes = _words("spreadsheet.noteWords")
+        self._doctor = fold(t("spreadsheet.doctor"))
+        self._misters = [fold(w) for w in t("spreadsheet.mister")]
+        self._cheque = fold(t("spreadsheet.cheque"))
+        self._dollar = fold(t("spreadsheet.dollar"))
+        self._paid_by = fold(t("spreadsheet.paidBy"))
+        self._to_account = fold(t("spreadsheet.toAccount"))
+        self._to_words = {fold(w) for w in t("spreadsheet.toWords")}
 
     @property
     def entries(self) -> list[AccountEntry]:
         return sorted(self._entries.values(), key=lambda e: -e.uses)
 
-    def learn_doctors(self, cells: list[object]) -> None:
+    def learn_doctors(self, cells: Iterable[object]) -> None:
         """First pass: "doctor X" anywhere makes a bare "X" elsewhere mean that doctor."""
         for cell in cells:
             for part in _SPLIT.split(text_of(cell)):
@@ -105,11 +106,11 @@ class Accounts:
             dest.doctor = dest.doctor or doctor
             return
         if key.startswith(self._paid_by):
-            dest.payer = dest.payer or tidy(part[len(t("legacy.paidBy")) :]) or None
+            dest.payer = dest.payer or tidy(part[len(t("spreadsheet.paidBy")) :]) or None
             return
         if key.startswith(self._cheque):
             dest.method = PaymentMethod.CHEQUE
-            dest.payer = dest.payer or tidy(part[len(t("legacy.cheque")) :]) or None
+            dest.payer = dest.payer or tidy(part[len(t("spreadsheet.cheque")) :]) or None
             return
         if self._dollar in key:
             dest.method = PaymentMethod.CURRENCY
@@ -134,9 +135,9 @@ class Accounts:
             rest = key[len(self._doctor) :].strip()
             if rest and not self._bank_of(rest)[0]:
                 self._doctors.add(rest)
-                return f"{t('legacy.doctor')} {rest}"
+                return f"{t('spreadsheet.doctor')} {rest}"
         if words and (words[0] in self._misters or len(words) == 1) and words[-1] in self._doctors:
-            return f"{t('legacy.doctor')} {words[-1]}"
+            return f"{t('spreadsheet.doctor')} {words[-1]}"
         return None
 
     # ── Canonical accounts ───────────────────────────────────────────────────
@@ -154,10 +155,12 @@ class Accounts:
         bank, rest = self._bank_of(fold(" ".join(words)))
         owner = " ".join(words[len(words) - len(rest.split()) :]) if rest else None
         if pos:
-            title = t("legacy.posTitle", bank=bank) if bank else t("legacy.posTitleNoBank")
+            title = (
+                t("spreadsheet.posTitle", bank=bank) if bank else t("spreadsheet.posTitleNoBank")
+            )
             return _Account(title, AccountKind.POS, bank, None)
         if bank and owner:
-            title = t("legacy.accountTitle", bank=bank, owner=owner)
+            title = t("spreadsheet.accountTitle", bank=bank, owner=owner)
             return _Account(title, AccountKind.OWN, bank, owner)
         if bank:
             return _Account(bank, AccountKind.OWN, bank, None)

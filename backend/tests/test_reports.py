@@ -100,3 +100,26 @@ def test_sqlite_backup_is_readable_and_pruned(tmp_path: Path, api: Api) -> None:
     assert len(list(tmp_path.glob("taraz-*.db"))) <= 2
     with sqlite3.connect(last) as conn:
         assert conn.execute("select name from patients").fetchall() == [("Backup Check",)]
+
+
+def test_month_sheet_shows_the_balance_after_each_row_and_exports_like_the_sheet(api: Api) -> None:
+    import io
+
+    from app.services.spreadsheet.convert import convert_month
+    from app.utils.jalali import parse_jalali
+
+    pid = api.patient("Ali")
+    aban_1, aban_5 = str(parse_jalali("1405-08-01")), str(parse_jalali("1405-08-05"))
+    api.tx(pid, "charge", 1000, on=aban_1, description="implant", doctor="Dr Emami")
+    api.tx(pid, "payment", 300, on=aban_5)
+    sheet = api.c.get("/api/reports/month-sheet?year=1405&month=8").json()
+    assert [(r["type"], r["balance_after"]) for r in sheet["rows"]] == [
+        ("charge", 1000),
+        ("payment", 700),
+    ]
+    assert (sheet["received"], sheet["charged"]) == (300, 1000)
+
+    xlsx = api.c.get("/api/reports/month-sheet.xlsx?year=1405&month=8").content
+    book, _ = convert_month(io.BytesIO(xlsx))  # the export reads back as a month sheet
+    assert {p.name: p.balance for p in book.patients} == {"Ali": 700}
+    assert any(line.doctor == "Dr Emami" for line in book.lines)

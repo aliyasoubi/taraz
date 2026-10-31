@@ -29,7 +29,16 @@ export function txTitle(tx: Transaction): string {
 }
 
 /** One ledger line as a list row, like a Wallet transaction: what, who paid → where it landed, how much, when. */
-export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: boolean }) {
+export function TxRow({
+  tx,
+  showPatient,
+  balanceAfter,
+}: {
+  tx: Transaction
+  showPatient?: boolean
+  /** Shown instead of the date: what the patient owed right after this row, as in the month sheet. */
+  balanceAfter?: number
+}) {
   const { openTransaction } = useTransactionSheets()
   const { Icon, tint, amount, sign } = txVisual(tx)
   const flow = tx.type === 'payment' || tx.type === 'refund'
@@ -64,7 +73,9 @@ export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: bool
               </>
             ) : (
               <span className="truncate">
-                {showPatient ? txTitle(tx) : (tx.treatment_title ?? formatJ(tx.occurred_on))}
+                {showPatient
+                  ? [txTitle(tx), tx.doctor].filter(Boolean).join(' · ')
+                  : [tx.treatment_title, tx.doctor].filter(Boolean).join(' · ') || formatJ(tx.occurred_on)}
               </span>
             )}
           </span>
@@ -74,9 +85,15 @@ export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: bool
             <span className="me-0.5">{sign}</span>
             <Money value={tx.amount} unit={false} />
           </span>
-          <span className={cx('mt-0.5 block text-[13px] leading-[18px]', pendingDue ? 'text-warn' : 'text-ink-2')}>
-            {pendingDue ? t('txRow.due', { when: relativeDay(tx.cheque_due_on!) }) : relativeDay(tx.occurred_on)}
-          </span>
+          {balanceAfter !== undefined ? (
+            <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-2">
+              {t('sheet.balanceAfter')} <Money value={balanceAfter} tone="auto" unit={false} />
+            </span>
+          ) : (
+            <span className={cx('mt-0.5 block text-[13px] leading-[18px]', pendingDue ? 'text-warn' : 'text-ink-2')}>
+              {pendingDue ? t('txRow.due', { when: relativeDay(tx.cheque_due_on!) }) : relativeDay(tx.occurred_on)}
+            </span>
+          )}
         </span>
       </span>
     </button>

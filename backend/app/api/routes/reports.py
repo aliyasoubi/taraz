@@ -4,7 +4,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Query, Response
 
 from app.api.deps import DbSession
-from app.schemas.reports import Dashboard, MonthlyReport
+from app.schemas.reports import Dashboard, MonthlyReport, MonthSheet
 from app.services import export, reports
 from app.utils.jalali import JMonth, today
 
@@ -58,6 +58,18 @@ def monthly_report_xlsx(
     m = _month(year, month)
     report = reports.monthly(db, m)
     return _xlsx(export.monthly_xlsx(report), f"taraz-{m.year}-{m.month:02d}.xlsx")
+
+
+@router.get("/reports/month-sheet", response_model=MonthSheet)
+def month_sheet(db: DbSession, year: Year = None, month: Month = None) -> MonthSheet:
+    return reports.month_sheet(db, _month(year, month))
+
+
+@router.get("/reports/month-sheet.xlsx")
+def month_sheet_xlsx(db: DbSession, year: Year = None, month: Month = None) -> Response:
+    m = _month(year, month)
+    sheet = reports.month_sheet(db, m)
+    return _xlsx(export.month_sheet_xlsx(sheet), f"taraz-sheet-{m.year}-{m.month:02d}.xlsx")
 
 
 @router.get("/export/backup.xlsx")

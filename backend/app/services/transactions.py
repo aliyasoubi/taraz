@@ -92,6 +92,7 @@ def tx_to_out(tx: Transaction) -> TransactionOut:
         amount=tx.amount,
         occurred_on=tx.occurred_on,
         description=tx.description,
+        doctor=tx.doctor,
         payer_name=tx.payer_name,
         account_id=tx.account_id,
         account_title=tx.account.title if tx.account else None,
@@ -107,8 +108,12 @@ def tx_to_out(tx: Transaction) -> TransactionOut:
     )
 
 
+def count_transactions(db: Session) -> int:
+    return int(db.scalar(select(func.count(Transaction.id))) or 0)
+
+
 def has_transactions(db: Session) -> bool:
-    return bool(db.scalar(select(func.count(Transaction.id))))
+    return count_transactions(db) > 0
 
 
 def get_transaction(db: Session, tx_id: int) -> Transaction:
@@ -148,14 +153,17 @@ def suggestions(db: Session) -> Suggestions:
         .order_by(func.count().desc(), func.max(Transaction.occurred_on).desc())
         .limit(50)
     )
-    doctors = db.scalars(
-        select(Treatment.doctor)
-        .where(Treatment.doctor.is_not(None))
-        .group_by(Treatment.doctor)
-        .order_by(func.count().desc())
-        .limit(30)
-    )
-    return Suggestions(payers=[p for p in payers if p], doctors=[d for d in doctors if d])
+    doctors: list[str | None] = []
+    for column in (Transaction.doctor, Treatment.doctor):
+        doctors += db.scalars(
+            select(column)
+            .where(column.is_not(None))
+            .group_by(column)
+            .order_by(func.count().desc())
+            .limit(30)
+        )
+    unique_doctors = list(dict.fromkeys(d for d in doctors if d))
+    return Suggestions(payers=[p for p in payers if p], doctors=unique_doctors)
 
 
 # ── Writing ────────────────────────────────────────────────────────────────
@@ -204,7 +212,16 @@ def _save(db: Session, tx: Transaction, changes: dict[str, Any]) -> TransactionO
 
 
 def create_transaction(db: Session, data: TransactionIn) -> TransactionOut:
-    return _save(db, Transaction(), data.model_dump())
+    fields = data.model_dump(exclude={"with_charge"})
+    if data.with_charge:
+        if data.type != TxType.PAYMENT:
+            raise InvalidError("with_charge_needs_payment")
+        # Saved with the payment below, in one commit.
+        charge = Transaction(**{**fields, "type": TxType.CHARGE})
+        normalize(charge)
+        _check_references(db, charge)
+        db.add(charge)
+    return _save(db, Transaction(), fields)
 
 
 def update_transaction(db: Session, tx_id: int, data: TransactionPatch) -> TransactionOut:

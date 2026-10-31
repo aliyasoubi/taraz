@@ -69,6 +69,7 @@ export interface Transaction {
   amount: number
   occurred_on: string
   description: string | null
+  doctor: string | null
   payer_name: string | null
   account_id: number | null
   account_title: string | null
@@ -90,12 +91,15 @@ export interface TransactionInput {
   amount: number
   occurred_on: string
   description: string | null
+  doctor: string | null
   payer_name: string | null
   account_id: number | null
   method: PaymentMethod | null
   reference: string | null
   cheque_due_on: string | null
   cheque_status: ChequeStatus | null
+  /** A payment for an item paid on the spot also records its charge. */
+  with_charge?: boolean
 }
 
 export interface TransactionPage {
@@ -143,6 +147,18 @@ export interface Dashboard {
   top_debtors: DebtorRow[]
   upcoming_cheques: Transaction[]
   recent: Transaction[]
+}
+
+/** One row of the month sheet: an entry and what the patient owed right after it. */
+export interface SheetRow extends Transaction {
+  balance_after: number
+}
+
+export interface MonthSheet {
+  month: MonthRef
+  rows: SheetRow[]
+  received: number
+  charged: number
 }
 
 export interface StatementRow {

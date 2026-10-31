@@ -11,7 +11,9 @@ from app.schemas.reports import (
     DebtorRow,
     MonthlyReport,
     MonthRef,
+    MonthSheet,
     SeriesPoint,
+    SheetRow,
     StatementRow,
 )
 from app.services import ledger
@@ -211,4 +213,29 @@ def monthly(db: Session, month: JMonth) -> MonthlyReport:
         ],
         rows=rows,
         cheques_due=[tx_to_out(tx) for tx in cheques_due],
+    )
+
+
+def month_sheet(db: Session, month: JMonth) -> MonthSheet:
+    """Every entry of the month in date order, each with the patient's balance right after it."""
+    running = func.sum(ledger.signed_amount).over(
+        partition_by=T.patient_id, order_by=(T.occurred_on, T.id)
+    )
+    after = select(T.id.label("id"), running.label("balance_after")).subquery()
+    stmt = (
+        tx_select()
+        .add_columns(after.c.balance_after)
+        .join(after, after.c.id == T.id)
+        .where(T.occurred_on.between(month.start, month.end))
+        .order_by(T.occurred_on, T.id)
+    )
+    rows = [
+        SheetRow(**tx_to_out(tx).model_dump(), balance_after=int(balance))
+        for tx, balance in db.execute(stmt).all()
+    ]
+    return MonthSheet(
+        month=month_ref(month),
+        rows=rows,
+        received=sum(r.amount for r in rows if r.type == TxType.PAYMENT and r.counts),
+        charged=sum(r.amount for r in rows if r.type == TxType.CHARGE),
     )

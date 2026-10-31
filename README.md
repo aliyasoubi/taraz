@@ -48,7 +48,7 @@ lives in a locale file:
 - `frontend/src/locales/fa.json` — the app's UI, read through `t('section.key')`
   (`frontend/src/shared/lib/i18n.ts`).
 - `backend/app/core/i18n/fa.json` — text the backend writes into Excel exports, the
-  words the importer matches in the old workbook, and the demo data.
+  words the importer matches in the practice's workbook, and the demo data.
 
 API errors are English codes (`patient_not_found`); the frontend translates them.
 `scripts/check-no-persian.sh` (run in CI) fails if Persian text appears anywhere
@@ -102,38 +102,50 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, and
 builds the Docker image.
 
-## Moving the old workbook in
+## Importing a month sheet
 
-Two steps, with your review in between:
+The app follows the practice's month sheet, one Jalali month at a time (Aban
+1405, then Azar, …). A sheet has one row per visit or payment: patient,
+service, balance after the row, payment, date, "bank - account", notes.
+Columns are found by their headers, so a "payer" or "doctor" column added
+later is read too. Only the chosen month's sheet is read; other sheets in the
+file are ignored.
 
-1. **Standardize** the old workbook into a clean, reviewable Excel file:
+The sheet records only the balance after each row, so charges are rebuilt
+from how a patient's balance moves. Each patient starts from what they owe in
+the app at the start of the month, and from zero the first time. The service
+column decides how a row is read:
+- An item or visit fee (toothbrush, visit) is a charge paid on the spot.
+- A deposit leaves the patient in credit.
 
-   ```bash
-   .venv/bin/python -m app.cli standardize-legacy old.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
-   ```
+**One step, on the server** (`-` reads the file from stdin):
 
-   It reads every month sheet, the orthodontics sheet and the debtors list, and
-   rebuilds a proper ledger. The old sheets recorded only the balance after
-   each payment, so treatment costs are reconstructed from how the balance
-   moves. Payments keep their source (who paid) and destination (which
-   account). About 160 spellings in the "bank-account" column are collapsed
-   into real accounts, and doctors, payers and notes in that column are
-   separated out. Each patient's final balance is aligned to the debtors list,
-   whose cheques become pending cheques. `data/import/` is gitignored: the
-   file holds real patient data.
+```bash
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-09 --dry-run < azar.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-09 < azar.xlsx
+```
 
-2. **Import** the reviewed file. All or nothing, and refused if the ledger
-   already has transactions:
+It refuses a month that already has entries, since importing it twice would
+count it twice. `--replace` starts the whole ledger afresh from this month;
+take a backup first. The output lists the rows worth a look.
 
-   ```bash
-   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
-   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx
-   ```
+**With a review step**, on your Mac: `convert-spreadsheet` writes the month as
+a standard workbook to check and correct, and `import-workbook` loads it.
+
+```bash
+.venv/bin/python -m app.cli convert-spreadsheet practice.xlsx data/import/taraz-standard.xlsx --month 1405-08
+.venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
+```
+
+`data/import/` is gitignored: the files hold real patient data. In the app,
+the **month sheet** tab shows the same month back, row by row, with each
+patient's balance after the row, and downloads it as Excel in the sheet's
+layout.
 
 ### Reviewing the standard workbook
 
 - **Transactions:** one row per charge, payment, discount or cheque. "Source"
-  points to the sheet and row of the old file. Rows needing a look are
+  points to the sheet and row of the practice workbook. Rows needing a look are
   highlighted, with the reason in the last column. Type, case, method and
   cheque status are dropdowns.
 - **Patients:** the name used, the other spellings found, and possible
@@ -141,13 +153,8 @@ Two steps, with your review in between:
 - **Accounts:** canonical title, bank, owner and kind. Fix titles here and in
   the transactions that use them.
 - **Issues:** everything ambiguous (unclear amounts and dates, balance drops
-  without a payment, patients missing from the debtors list), and what was
+  without a payment, cheques), and what was
   done about each.
-
-Patients with a balance in the monthly sheets but **not on the debtors list**
-are kept and flagged by default. If the debtors list is complete, add
-`--settle-unlisted` to the standardize command to close those balances
-instead (one flagged adjustment each).
 
 ## Deployment
 
@@ -171,7 +178,7 @@ backend/app/
     ledger.py        the single definition of a balance (signed amounts, cheque rules)
     patients.py  accounts.py  transactions.py  reports.py
     export.py  backup.py  demo.py
-    legacy/          old workbook → standard workbook (cells, accounts, ledger rebuild)
+    spreadsheet/     practice workbook → standard workbook (cells, accounts, ledger rebuild)
     workbook/        standard workbook model, Excel writer/reader, database importer
   schemas/           Pydantic request/response models, one module per resource
   models.py          SQLAlchemy tables
