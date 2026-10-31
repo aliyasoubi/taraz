@@ -102,41 +102,45 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, and
 builds the Docker image.
 
-## Importing the practice's workbook
+## Importing a month sheet
 
-Two steps, with your review in between:
+The app follows the practice's month sheet, one Jalali month at a time (Aban
+1405, then Azar, …). A sheet has one row per visit or payment: patient,
+service, balance after the row, payment, date, "bank - account", notes.
+Columns are found by their headers, so a "payer" or "doctor" column added
+later is read too. Only the chosen month's sheet is read; other sheets in the
+file are ignored.
 
-1. **Convert** the workbook into a clean, reviewable Excel file. `--as-of` is
-   the date of its debtors list:
+The sheet records only the balance after each row, so charges are rebuilt
+from how a patient's balance moves. Each patient starts from what they owe in
+the app at the start of the month, and from zero the first time. The service
+column decides how a row is read:
+- An item or visit fee (toothbrush, visit) is a charge paid on the spot.
+- A deposit leaves the patient in credit.
 
-   ```bash
-   .venv/bin/python -m app.cli convert-spreadsheet practice.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
-   ```
+**One step, on the server** (`-` reads the file from stdin):
 
-   It reads every month sheet (patient, service, balance after the row,
-   payment, date, "bank - account", notes), the orthodontics sheet and the
-   debtors list. Columns are found by their headers, so a "payer" or "doctor"
-   column added later is read too. The sheets record only the balance after
-   each row, so treatment costs are rebuilt from how the balance moves.
-   The service column decides how a row is read:
-   - An implant keeps its own balance.
-   - An item or visit fee (toothbrush, visit) is a charge paid on the spot.
-   - A deposit leaves the patient in credit.
+```bash
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-09 --dry-run < azar.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-09 < azar.xlsx
+```
 
-   On the debtors list's date each listed balance is aligned to it, and its
-   cheques become pending cheques. Later rows replay on top. Doctors, payers
-   and notes in the "bank - account" and notes columns are separated out, and
-   the many spellings of one account are collapsed into one. `data/import/` is
-   gitignored: the file holds real patient data.
+It refuses a month that already has entries, since importing it twice would
+count it twice. `--replace` starts the whole ledger afresh from this month;
+take a backup first. The output lists the rows worth a look.
 
-2. **Import** the reviewed file. It is all or nothing, and refused if the
-   ledger already has transactions. `--replace` removes the earlier import
-   first; take a backup before using it.
+**With a review step**, on your Mac: `convert-spreadsheet` writes the month as
+a standard workbook to check and correct, and `import-workbook` loads it.
 
-   ```bash
-   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
-   .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx
-   ```
+```bash
+.venv/bin/python -m app.cli convert-spreadsheet practice.xlsx data/import/taraz-standard.xlsx --month 1405-08
+.venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
+```
+
+`data/import/` is gitignored: the files hold real patient data. In the app,
+the **month sheet** tab shows the same month back, row by row, with each
+patient's balance after the row, and downloads it as Excel in the sheet's
+layout.
 
 ### Reviewing the standard workbook
 
@@ -149,13 +153,8 @@ Two steps, with your review in between:
 - **Accounts:** canonical title, bank, owner and kind. Fix titles here and in
   the transactions that use them.
 - **Issues:** everything ambiguous (unclear amounts and dates, balance drops
-  without a payment, patients missing from the debtors list), and what was
+  without a payment, cheques), and what was
   done about each.
-
-Patients with a balance in the monthly sheets but **not on the debtors list**
-are kept and flagged by default. If the debtors list is complete, add
-`--settle-unlisted` to the convert command to close those balances
-instead (one flagged adjustment each).
 
 ## Deployment
 

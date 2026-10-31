@@ -149,6 +149,18 @@ export interface Dashboard {
   recent: Transaction[]
 }
 
+/** One row of the month sheet: an entry and what the patient owed right after it. */
+export interface SheetRow extends Transaction {
+  balance_after: number
+}
+
+export interface MonthSheet {
+  month: MonthRef
+  rows: SheetRow[]
+  received: number
+  charged: number
+}
+
 export interface StatementRow {
   id: number
   name: string

@@ -74,9 +74,6 @@ export function MonthPage() {
                 to={`/patients/${r.id}`}
                 icon={<Avatar name={r.name} size={32} />}
                 title={r.name}
-                subtitle={
-                  r.pending_cheques > 0 ? <span className="text-warn">{t('common.pendingCheque')}</span> : undefined
-                }
                 value={<Money value={r.closing} tone="debt" unit={false} />}
                 chevron
               />

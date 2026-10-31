@@ -49,7 +49,10 @@
     "noTransactionsYet": "هنوز تراکنشی ثبت نشده",
     "missing": "؟"
   },
-  "units": { "rial": "ریال", "toman": "تومان" },
+  "units": {
+    "rial": "ریال",
+    "toman": "تومان"
+  },
   "numbers": {
     "ones": ["", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه"],
     "teens": ["ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"],
@@ -79,9 +82,23 @@
     "nextMonth": "ماه بعد",
     "currentMonth": "ماه جاری"
   },
-  "tone": { "debt": "بدهکار", "credit": "بستانکار", "settled": "تسویه" },
-  "tx": { "charge": "هزینه درمان", "payment": "پرداخت", "discount": "تخفیف", "refund": "استرداد" },
-  "txShort": { "charge": "هزینه", "payment": "پرداخت", "discount": "تخفیف", "refund": "استرداد" },
+  "tone": {
+    "debt": "بدهکار",
+    "credit": "بستانکار",
+    "settled": "تسویه"
+  },
+  "tx": {
+    "charge": "هزینه درمان",
+    "payment": "پرداخت",
+    "discount": "تخفیف",
+    "refund": "استرداد"
+  },
+  "txShort": {
+    "charge": "هزینه",
+    "payment": "پرداخت",
+    "discount": "تخفیف",
+    "refund": "استرداد"
+  },
   "method": {
     "card": "کارت به کارت",
     "transfer": "انتقال بانکی",
@@ -91,7 +108,11 @@
     "currency": "ارز",
     "other": "سایر"
   },
-  "cheque": { "pending": "در انتظار وصول", "cleared": "وصول شد", "bounced": "برگشتی" },
+  "cheque": {
+    "pending": "در انتظار وصول",
+    "cleared": "وصول شد",
+    "bounced": "برگشتی"
+  },
   "accountKind": {
     "own": "حساب خودم",
     "staff": "همکار / منشی",
@@ -162,7 +183,7 @@
     "accounts": "حساب‌ها",
     "reports": "گزارش",
     "addTransaction": "ثبت تراکنش",
-    "receipts": "دریافتی‌ها",
+    "sheet": "شیت ماه",
     "month": "پایان ماه"
   },
   "amount": {
@@ -172,8 +193,14 @@
     "plusMillions": "+{n} میلیون",
     "backspace": "پاک کردن رقم آخر"
   },
-  "chart": { "received": "دریافتی {month}", "charged": "هزینه‌های ثبت‌شده" },
-  "accountCard": { "bank": "بانک {bank}", "receivedThisMonth": "واریزی این ماه" },
+  "chart": {
+    "received": "دریافتی {month}",
+    "charged": "هزینه‌های ثبت‌شده"
+  },
+  "accountCard": {
+    "bank": "بانک {bank}",
+    "receivedThisMonth": "واریزی این ماه"
+  },
   "txRow": {
     "refundToPatient": "استرداد به بیمار",
     "due": "سررسید {when}",
@@ -181,7 +208,12 @@
   },
   "txForm": {
     "newTitle": "تراکنش جدید",
-    "titles": { "payment": "پرداخت جدید", "charge": "هزینه جدید", "discount": "تخفیف جدید", "refund": "استرداد جدید" },
+    "titles": {
+      "payment": "پرداخت جدید",
+      "charge": "هزینه جدید",
+      "discount": "تخفیف جدید",
+      "refund": "استرداد جدید"
+    },
     "done": "ثبت",
     "payer": "پرداخت‌کننده",
     "to": "واریز به",
@@ -196,7 +228,6 @@
     "noDoctor": "نامشخص",
     "doctorPlaceholder": "نام پزشک",
     "previousDoctors": "پزشکان",
-    "chequePayment": "پرداخت با چک",
     "saleNote": "مورد فروشی است: هزینه و پرداختش با هم ثبت می‌شود و از بدهی قبلی کم نمی‌کند.",
     "saleItems": [
       "ویزیت",
@@ -274,21 +305,6 @@
     "phone": "شماره تماس",
     "note": "یادداشت"
   },
-  "treatmentForm": {
-    "newTitle": "پرونده درمان جدید",
-    "editTitle": "ویرایش پرونده",
-    "subtitle": "مثل ردیف‌های «imp» در اکسل: مانده هر درمان جداگانه حساب می‌شود",
-    "created": "پرونده درمان ساخته شد",
-    "updated": "پرونده به‌روز شد",
-    "kind": "نوع درمان",
-    "title": "عنوان",
-    "titleHint": "خالی بماند، نوع درمان عنوان می‌شود",
-    "doctor": "پزشک معالج",
-    "doctorPlaceholder": "نام پزشک",
-    "active": "در حال درمان",
-    "completed": "پایان‌یافته",
-    "completedBadge": "پایان"
-  },
   "accountForm": {
     "newTitle": "حساب مقصد جدید",
     "editTitle": "ویرایش حساب",
@@ -351,20 +367,15 @@
   },
   "patient": {
     "balance": "مانده حساب",
-    "caseBalance": "مانده {title}",
-    "pendingAfter": "چک در انتظار وصول — پس از وصول:",
     "paid": "پرداخت‌شده",
     "charged": "کل هزینه",
     "addPayment": "ثبت پرداخت",
     "addCharge": "ثبت هزینه",
     "addDiscount": "ثبت تخفیف",
-    "addRefund": "ثبت استرداد",
     "owes": "بدهی",
     "hasCredit": "بستانکار (پیش‌پرداخت)",
     "settledUp": "حساب تسویه است",
     "of": "از",
-    "cases": "پرونده‌های درمان",
-    "tapToEdit": "برای ویرایش پرونده، دوباره روی آن بزنید.",
     "ledger": "گردش حساب",
     "emptyHint": "هزینه درمان یا پرداخت بیمار را ثبت کنید تا مانده محاسبه شود",
     "monthChange": "تغییر مانده",
@@ -423,28 +434,21 @@
     "discount": "تخفیف",
     "refund": "استرداد"
   },
-  "cheques": {
-    "title": "چک‌ها",
-    "subtitle": "چک‌های دریافتی از بیماران",
-    "pending": "در جریان",
-    "cleared": "وصول‌شده",
-    "bounced": "برگشتی",
-    "empty": "چکی در این دسته نیست",
-    "overdue": "سررسید گذشته — وضعیت را مشخص کنید"
-  },
-  "receipts": {
-    "title": "دریافتی‌ها",
-    "total": "جمع دریافتی {month}",
-    "count": "{n} پرداخت",
-    "allAccounts": "همه حساب‌ها",
-    "empty": "پرداختی در این ماه ثبت نشده",
-    "emptyHint": "پرداخت‌ها از صفحه هر بیمار یا دکمه + بالای همین صفحه ثبت می‌شوند"
+  "sheet": {
+    "title": "شیت ماه",
+    "received": "دریافتی",
+    "charged": "هزینه‌ها",
+    "rows": "{n} ردیف در {month}",
+    "allRows": "همه ردیف‌ها",
+    "balanceAfter": "مانده",
+    "download": "دریافت اکسل این ماه به شکل شیت",
+    "empty": "این ماه هنوز ردیفی ندارد",
+    "emptyHint": "پرداخت یا هزینه هر بیمار را از صفحه خودش یا دکمه + بالای همین صفحه ثبت کنید"
   },
   "month": {
     "title": "پایان ماه",
     "receivable": "طلب در پایان {month}",
     "download": "دریافت فایل اکسل این ماه",
-    "details": "گزارش کامل ماه",
     "debtors": "بدهی هر بیمار در پایان ماه"
   },
   "settings": {

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, CreditCard, DatabaseBackup, EyeOff } from 'lucide-react'
+import { CreditCard, DatabaseBackup, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, download } from '@/shared/api/client'
 import { keys } from '@/shared/api/keys'
@@ -33,16 +33,6 @@ export function SettingsPage() {
               </ListIcon>
             }
             title={t('nav.accounts')}
-            chevron
-          />
-          <ListRow
-            to="/cheques"
-            icon={
-              <ListIcon tone="warn">
-                <CalendarClock />
-              </ListIcon>
-            }
-            title={t('settings.cheques')}
             chevron
           />
         </ListSection>

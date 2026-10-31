@@ -110,57 +110,36 @@ patient-book's Caddy, and checks `https://taraz.dentixo.ir`.
 
 On the iPhone: open `https://taraz.dentixo.ir` in Safari → Share → **Add to Home Screen**.
 
-## 5. Move the practice's workbook in
+## 5. Import the month sheet
 
-On your Mac, from `backend/` (the workbook itself never needs to reach the server):
-
-```bash
-.venv/bin/python -m app.cli convert-spreadsheet /path/to/practice.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
-```
-
-`--as-of` is the date of the workbook's debtors list. Review
-`data/import/taraz-standard.xlsx` (see "Reviewing the standard workbook" in the
-main README), then copy it up and import:
+Copy the workbook up from your Mac:
 
 ```bash
-scp backend/data/import/taraz-standard.xlsx <user>@<vps>:/tmp/taraz-standard.xlsx
+scp aban.xlsx <user>@<vps>:/tmp/month.xlsx
 ```
 
 The container's filesystem is read-only, so the file is piped in (`-` reads
-stdin) rather than copied:
-
-```bash
-cd /opt/taraz && docker compose exec -T taraz python -m app.cli import-workbook - --dry-run < /tmp/taraz-standard.xlsx
-```
-
-```bash
-docker compose exec -T taraz python -m app.cli import-workbook - < /tmp/taraz-standard.xlsx
-```
-
-```bash
-rm /tmp/taraz-standard.xlsx
-```
-
-The import is all-or-nothing and refuses to run into a ledger that already has
-transactions.
-
-### Replacing an earlier import
-
-When a corrected workbook should take the place of what is in the app, back up
-first, then add `--replace`. It removes every patient, account and transaction,
-and anything entered in the app since the last import goes with them. The
-output says how many earlier transactions it replaced.
+stdin). The first month starts the ledger afresh with `--replace`; take a
+backup first:
 
 ```bash
 cd /opt/taraz && ./ops/backup.sh
 ```
 
 ```bash
-docker compose exec -T taraz python -m app.cli import-workbook - --replace --dry-run < /tmp/taraz-standard.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-08 --replace --dry-run < /tmp/month.xlsx
 ```
 
 ```bash
-docker compose exec -T taraz python -m app.cli import-workbook - --replace < /tmp/taraz-standard.xlsx
+docker compose exec -T taraz python -m app.cli import-month - --month 1405-08 --replace < /tmp/month.xlsx
+```
+
+Each later month (Azar = `1405-09`, …) goes on top without `--replace`. Each
+patient then continues from their balance in the app. A month that already
+has entries is refused, so nothing is counted twice.
+
+```bash
+rm /tmp/month.xlsx
 ```
 
 ## Backups

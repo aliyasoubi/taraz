@@ -171,15 +171,6 @@ def parse_name(cell: object) -> PatientName | None:
     return PatientName(display=name, key=name_key(name), case=case)
 
 
-def service_case(text: str) -> TreatmentKind | None:
-    """The treatment case a service names ("implant", "deposit; implant"), if any."""
-    key = fold(text)
-    for kind, words in t("spreadsheet.caseSuffixes").items():
-        if any(fold(w) in key for w in words if len(w) > 3):
-            return TreatmentKind(kind)
-    return None
-
-
 def name_key(name: str) -> str:
     """Spelling-insensitive identity: letter variants, spaces and half-spaces ignored."""
     return fold(name).replace(" ", "")

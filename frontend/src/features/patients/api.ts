@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { api, qs } from '@/shared/api/client'
 import { keys, useInvalidateLedger } from '@/shared/api/keys'
-import type { Patient, PatientDetail, Transaction, Treatment } from '@/shared/api/types'
+import type { Patient, PatientDetail, Transaction } from '@/shared/api/types'
 
 export interface PatientListParams {
   q?: string
@@ -48,27 +48,6 @@ export function useDeletePatient() {
   const invalidate = useInvalidateLedger()
   return useMutation({
     mutationFn: (id: number) => api.delete(`/patients/${id}`),
-    onSuccess: invalidate,
-  })
-}
-
-export type TreatmentInput = Pick<Treatment, 'title' | 'kind' | 'doctor' | 'status' | 'note'>
-
-export function useSaveTreatment(patientId: number) {
-  const invalidate = useInvalidateLedger()
-  return useMutation({
-    mutationFn: ({ id, data }: { id?: number; data: Partial<TreatmentInput> }) =>
-      id
-        ? api.patch<Treatment>(`/treatments/${id}`, data)
-        : api.post<Treatment>(`/patients/${patientId}/treatments`, data),
-    onSuccess: invalidate,
-  })
-}
-
-export function useDeleteTreatment() {
-  const invalidate = useInvalidateLedger()
-  return useMutation({
-    mutationFn: (id: number) => api.delete(`/treatments/${id}`),
     onSuccess: invalidate,
   })
 }

@@ -11,6 +11,7 @@ export const keys = {
   account: (id: number) => ['accounts', id] as const,
   transactions: (params: object) => ['transactions', params] as const,
   monthly: (y: number, m: number) => ['reports', 'monthly', y, m] as const,
+  monthSheet: (y: number, m: number) => ['reports', 'month-sheet', y, m] as const,
   suggestions: ['suggestions'] as const,
 }
 

@@ -6,7 +6,7 @@ import type { StackDirection } from '@/shared/ui/motion'
 type NavType = `${NavigationType}`
 
 /** The first screen of each tab. */
-export const TAB_ROOTS = ['/', '/receipts', '/month'] as const
+export const TAB_ROOTS = ['/', '/sheet', '/month'] as const
 
 export function isTabRoot(path: string): boolean {
   return (TAB_ROOTS as readonly string[]).includes(path)

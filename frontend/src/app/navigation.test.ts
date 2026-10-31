@@ -3,7 +3,7 @@ import { directionOf, nextStack, swipeCompletes } from './navigation'
 
 describe('directionOf', () => {
   it('switches tabs without animation', () => {
-    expect(directionOf('/', '/receipts', 'PUSH')).toBe('none')
+    expect(directionOf('/', '/sheet', 'PUSH')).toBe('none')
     expect(directionOf('/patients/3', '/month', 'PUSH')).toBe('none')
   })
   it('pushes deeper screens and pops back', () => {
@@ -21,7 +21,7 @@ describe('nextStack', () => {
     expect(nextStack(b, '/settings', 'POP')).toEqual(['/', '/settings'])
   })
   it('starts over at a tab root', () => {
-    expect(nextStack(['/', '/patients/3'], '/receipts', 'PUSH')).toEqual(['/receipts'])
+    expect(nextStack(['/', '/patients/3'], '/sheet', 'PUSH')).toEqual(['/sheet'])
   })
   it('replaces the top screen', () => {
     expect(nextStack(['/', '/patients/3'], '/', 'REPLACE')).toEqual(['/'])

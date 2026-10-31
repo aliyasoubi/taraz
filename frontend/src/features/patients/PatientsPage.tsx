@@ -1,4 +1,4 @@
-import { Clock3, Plus, Settings, Users } from 'lucide-react'
+import { Plus, Settings, Users } from 'lucide-react'
 import { useDeferredValue, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useDashboard } from '@/features/dashboard/api'
@@ -13,7 +13,6 @@ import {
   Avatar,
   Empty,
   IconButton,
-  ListIcon,
   ListRow,
   ListSection,
   Money,
@@ -75,22 +74,6 @@ export function PatientsPage() {
               )}
             </div>
 
-            {dashboard && dashboard.pending_cheques_count > 0 && (
-              <ListSection className="mt-3">
-                <ListRow
-                  to="/cheques"
-                  icon={
-                    <ListIcon tone="warn">
-                      <Clock3 />
-                    </ListIcon>
-                  }
-                  title={t('patients.pendingCheques')}
-                  value={<Money value={dashboard.pending_cheques_total} compact unit={false} />}
-                  chevron
-                />
-              </ListSection>
-            )}
-
             <Segmented
               className="mt-6"
               value={scope}
@@ -141,15 +124,7 @@ function PatientRow({ patient: p }: { patient: Patient }) {
       to={`/patients/${p.id}`}
       icon={<Avatar name={p.name} size={38} />}
       title={p.name}
-      subtitle={
-        p.pending_cheques > 0 ? (
-          <span className="text-warn">{t('common.pendingCheque')}</span>
-        ) : p.last_activity ? (
-          relativeDay(p.last_activity)
-        ) : (
-          t('common.noTransactions')
-        )
-      }
+      subtitle={p.last_activity ? relativeDay(p.last_activity) : t('common.noTransactions')}
       value={
         p.balance === 0 ? (
           <span className="text-[15px]">{t('tone.settled')}</span>

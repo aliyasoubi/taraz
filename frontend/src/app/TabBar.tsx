@@ -1,4 +1,4 @@
-import { CalendarDays, Users, Wallet } from 'lucide-react'
+import { CalendarDays, Table2, Users } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import { cx } from '@/shared/lib/cx'
 import { t } from '@/shared/lib/i18n'
@@ -7,7 +7,7 @@ import { t } from '@/shared/lib/i18n'
 const TABS = [
   // A patient, settings, accounts and cheques are all reached from the patients tab.
   { to: '/', label: t('nav.patients'), icon: Users },
-  { to: '/receipts', label: t('nav.receipts'), icon: Wallet },
+  { to: '/sheet', label: t('nav.sheet'), icon: Table2 },
   { to: '/month', label: t('nav.month'), icon: CalendarDays },
 ] as const
 
