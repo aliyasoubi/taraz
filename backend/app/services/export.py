@@ -83,6 +83,7 @@ def _tx_rows(txs: Iterable[Transaction]) -> Iterable[list[Any]]:
             to_jalali_str(tx.cheque_due_on),
             _label("cheque", tx.cheque_status),
             tx.description or "",
+            tx.doctor or "",
         ]
 
 

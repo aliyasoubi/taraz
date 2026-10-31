@@ -85,7 +85,8 @@ def _seed_patient(
             type=TxType.CHARGE,
             amount=total,
             occurred_on=start,
-            description=demo["planNote"],
+            description=demo["caseTitles"][kind],
+            doctor=case.doctor,
         )
     )
 

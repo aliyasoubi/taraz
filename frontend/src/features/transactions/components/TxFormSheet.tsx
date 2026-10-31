@@ -10,14 +10,22 @@ import {
   canSubmit,
   initialFormState,
   isCheque,
-  methodsFor,
+  isSale,
+  methodForAccount,
   movesMoney,
   toPayload,
   type TxFormState,
   type TxPreset,
 } from '@/features/transactions/form/model'
 import { readLastAccount, rememberLastAccount } from '@/features/transactions/form/lastAccount'
-import { AccountPicker, ChoicePicker, FormPage, PatientPicker, PayerPicker } from '@/features/transactions/form/Pickers'
+import {
+  AccountPicker,
+  ChoicePicker,
+  DoctorPicker,
+  FormPage,
+  PatientPicker,
+  PayerPicker,
+} from '@/features/transactions/form/Pickers'
 import type { Transaction } from '@/shared/api/types'
 import { errorMessage } from '@/shared/lib/errors'
 import { messages, t } from '@/shared/lib/i18n'
@@ -35,20 +43,26 @@ import {
   Segmented,
   Sheet,
   stackVariants,
+  Toggle,
   type StackDirection,
 } from '@/shared/ui'
 
-type Page = 'main' | 'patient' | 'payer' | 'account' | 'method' | 'case'
+type Page = 'main' | 'patient' | 'payer' | 'account' | 'doctor' | 'case'
+
+const SALE_ITEMS = messages.txForm.saleItems
 
 const AMOUNT_TONE = { charge: 'debt', payment: 'credit', discount: 'brand', refund: 'brand' } as const
 
 const inputClass = 'min-w-0 flex-1 bg-transparent text-[17px] caret-brand outline-none placeholder:text-ink-3'
 
 /**
- * Create or edit any ledger line. The common case needs only the amount: the
- * payer defaults to the patient, the account to the one used last, the method
- * to card and the date to today. Each of those is one row; tapping it pushes a
- * page with the choices, inside the sheet, as an iOS form does.
+ * Create or edit any ledger line, in the order of the practice's sheet: amount,
+ * service, who paid, which account, the doctor, the date. The common case needs
+ * only the amount: the payer defaults to the patient, the account to the one
+ * used last and the date to today. Each is one row; tapping it pushes a page
+ * with the choices, inside the sheet, as an iOS form does. The method follows
+ * from the account (a card reader, the cash box, else a card transfer), with a
+ * switch for cheques.
  */
 export function TxFormSheet({
   open,
@@ -87,6 +101,7 @@ export function TxFormSheet({
   const valid = canSubmit(current)
   const money = movesMoney(form.type)
   const cheque = isCheque(form)
+  const sale = isSale(form, SALE_ITEMS)
   const title = editing ? t('txForm.editTitle') : messages.txForm.titles[form.type]
 
   const push = (next: Page) => {
@@ -103,7 +118,7 @@ export function TxFormSheet({
   const submit = () => {
     if (!valid) return
     save.mutate(
-      { id: editing?.id, data: toPayload(current) },
+      { id: editing?.id, data: toPayload(current, editing ? [] : SALE_ITEMS) },
       {
         onSuccess: () => {
           if (money && accountId) rememberLastAccount(accountId)
@@ -138,24 +153,16 @@ export function TxFormSheet({
           accounts={selectableAccounts}
           selectedId={accountId}
           onPick={(id) => {
-            update({ accountId: id })
+            const kind = selectableAccounts.find((a) => a.id === id)?.kind
+            update({ accountId: id, method: cheque ? 'cheque' : methodForAccount(kind) })
             pop()
           }}
         />
       ),
     },
-    method: {
-      title: t('txForm.methodLabel'),
-      body: (
-        <ChoicePicker
-          options={methodsFor(form.type).map((m) => ({ value: m, label: METHOD_LABEL[m] }))}
-          value={form.method}
-          onPick={(method) => {
-            update({ method })
-            pop()
-          }}
-        />
-      ),
+    doctor: {
+      title: t('txForm.doctor'),
+      body: <DoctorPicker value={form.doctor} onChange={(doctor) => update({ doctor })} onDone={pop} />,
     },
     case: {
       title: t('txForm.caseLabel'),
@@ -204,7 +211,36 @@ export function TxFormSheet({
         autoFocus={!editing && Boolean(form.patientId) && direction === 'none'}
       />
 
-      <ListSection className="mt-4">
+      <ListSection
+        className="mt-3"
+        footer={
+          <>
+            <div className="-mx-4 mt-1 no-scrollbar flex gap-2 overflow-x-auto px-4">
+              {QUICK_NOTES[form.type].map((note) => (
+                <Chip
+                  key={note}
+                  active={form.description === note}
+                  onClick={() => update({ description: form.description === note ? '' : note })}
+                >
+                  {note}
+                </Chip>
+              ))}
+            </div>
+            {sale && !editing && <p className="mt-2">{t('txForm.saleNote')}</p>}
+          </>
+        }
+      >
+        <ListRow>
+          <input
+            value={form.description}
+            onChange={(e) => update({ description: e.target.value })}
+            placeholder={form.type === 'charge' ? t('txForm.chargePlaceholder') : t('txForm.servicePlaceholder')}
+            className={inputClass}
+          />
+        </ListRow>
+      </ListSection>
+
+      <ListSection>
         {form.type === 'payment' && (
           <ListRow
             title={t('txForm.payer')}
@@ -221,14 +257,26 @@ export function TxFormSheet({
               chevron
               onClick={() => push('account')}
             />
-            <ListRow
-              title={t('txForm.methodLabel')}
-              value={METHOD_LABEL[form.method]}
-              chevron
-              onClick={() => push('method')}
-            />
+            {form.type === 'payment' && (
+              <ListRow
+                title={t('txForm.chequePayment')}
+                value={
+                  <Toggle
+                    checked={cheque}
+                    label={t('txForm.chequePayment')}
+                    onChange={(on) => update({ method: on ? 'cheque' : methodForAccount(account?.kind) })}
+                  />
+                }
+              />
+            )}
           </>
         )}
+        <ListRow
+          title={t('txForm.doctor')}
+          value={form.doctor.trim() || <span className="text-ink-3">{t('txForm.noDoctor')}</span>}
+          chevron
+          onClick={() => push('doctor')}
+        />
         {patient && patient.treatments.length > 0 && (
           <ListRow
             title={t('txForm.caseLabel')}
@@ -275,30 +323,8 @@ export function TxFormSheet({
         </ListSection>
       )}
 
-      <ListSection
-        footer={
-          <div className="-mx-4 mt-1 no-scrollbar flex gap-2 overflow-x-auto px-4">
-            {QUICK_NOTES[form.type].map((note) => (
-              <Chip
-                key={note}
-                active={form.description === note}
-                onClick={() => update({ description: form.description === note ? '' : note })}
-              >
-                {note}
-              </Chip>
-            ))}
-          </div>
-        }
-      >
-        <ListRow>
-          <input
-            value={form.description}
-            onChange={(e) => update({ description: e.target.value })}
-            placeholder={form.type === 'charge' ? t('txForm.chargePlaceholder') : t('txForm.notePlaceholder')}
-            className={inputClass}
-          />
-        </ListRow>
-        {money && !cheque && (
+      {money && !cheque && (
+        <ListSection>
           <ListRow>
             <input
               value={form.reference}
@@ -308,8 +334,8 @@ export function TxFormSheet({
               className={inputClass}
             />
           </ListRow>
-        )}
-      </ListSection>
+        </ListSection>
+      )}
     </FormPage>
   )
 

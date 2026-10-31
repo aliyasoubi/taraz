@@ -48,7 +48,7 @@ lives in a locale file:
 - `frontend/src/locales/fa.json` — the app's UI, read through `t('section.key')`
   (`frontend/src/shared/lib/i18n.ts`).
 - `backend/app/core/i18n/fa.json` — text the backend writes into Excel exports, the
-  words the importer matches in the old workbook, and the demo data.
+  words the importer matches in the practice's workbook, and the demo data.
 
 API errors are English codes (`patient_not_found`); the frontend translates them.
 `scripts/check-no-persian.sh` (run in CI) fails if Persian text appears anywhere
@@ -102,28 +102,36 @@ cd frontend && npm run format:check && npm run lint && npm run typecheck && npm 
 GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push, and
 builds the Docker image.
 
-## Moving the old workbook in
+## Importing the practice's workbook
 
 Two steps, with your review in between:
 
-1. **Standardize** the old workbook into a clean, reviewable Excel file:
+1. **Convert** the workbook into a clean, reviewable Excel file. `--as-of` is
+   the date of its debtors list:
 
    ```bash
-   .venv/bin/python -m app.cli standardize-legacy old.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
+   .venv/bin/python -m app.cli convert-spreadsheet practice.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
    ```
 
-   It reads every month sheet, the orthodontics sheet and the debtors list, and
-   rebuilds a proper ledger. The old sheets recorded only the balance after
-   each payment, so treatment costs are reconstructed from how the balance
-   moves. Payments keep their source (who paid) and destination (which
-   account). About 160 spellings in the "bank-account" column are collapsed
-   into real accounts, and doctors, payers and notes in that column are
-   separated out. Each patient's final balance is aligned to the debtors list,
-   whose cheques become pending cheques. `data/import/` is gitignored: the
-   file holds real patient data.
+   It reads every month sheet (patient, service, balance after the row,
+   payment, date, "bank - account", notes), the orthodontics sheet and the
+   debtors list. Columns are found by their headers, so a "payer" or "doctor"
+   column added later is read too. The sheets record only the balance after
+   each row, so treatment costs are rebuilt from how the balance moves.
+   The service column decides how a row is read:
+   - An implant keeps its own balance.
+   - An item or visit fee (toothbrush, visit) is a charge paid on the spot.
+   - A deposit leaves the patient in credit.
 
-2. **Import** the reviewed file. All or nothing, and refused if the ledger
-   already has transactions:
+   On the debtors list's date each listed balance is aligned to it, and its
+   cheques become pending cheques. Later rows replay on top. Doctors, payers
+   and notes in the "bank - account" and notes columns are separated out, and
+   the many spellings of one account are collapsed into one. `data/import/` is
+   gitignored: the file holds real patient data.
+
+2. **Import** the reviewed file. It is all or nothing, and refused if the
+   ledger already has transactions. `--replace` removes the earlier import
+   first; take a backup before using it.
 
    ```bash
    .venv/bin/python -m app.cli import-workbook data/import/taraz-standard.xlsx --dry-run
@@ -133,7 +141,7 @@ Two steps, with your review in between:
 ### Reviewing the standard workbook
 
 - **Transactions:** one row per charge, payment, discount or cheque. "Source"
-  points to the sheet and row of the old file. Rows needing a look are
+  points to the sheet and row of the practice workbook. Rows needing a look are
   highlighted, with the reason in the last column. Type, case, method and
   cheque status are dropdowns.
 - **Patients:** the name used, the other spellings found, and possible
@@ -146,7 +154,7 @@ Two steps, with your review in between:
 
 Patients with a balance in the monthly sheets but **not on the debtors list**
 are kept and flagged by default. If the debtors list is complete, add
-`--settle-unlisted` to the standardize command to close those balances
+`--settle-unlisted` to the convert command to close those balances
 instead (one flagged adjustment each).
 
 ## Deployment
@@ -171,7 +179,7 @@ backend/app/
     ledger.py        the single definition of a balance (signed amounts, cheque rules)
     patients.py  accounts.py  transactions.py  reports.py
     export.py  backup.py  demo.py
-    legacy/          old workbook → standard workbook (cells, accounts, ledger rebuild)
+    spreadsheet/     practice workbook → standard workbook (cells, accounts, ledger rebuild)
     workbook/        standard workbook model, Excel writer/reader, database importer
   schemas/           Pydantic request/response models, one module per resource
   models.py          SQLAlchemy tables

@@ -111,6 +111,7 @@ export function TxDetailSheet({
             }}
           />
           {tx.treatment_title && <ListRow title={t('common.case')} value={tx.treatment_title} />}
+          {tx.doctor && <ListRow title={t('txForm.doctor')} value={tx.doctor} />}
           {tx.type === 'refund' && tx.account_title && (
             <ListRow title={t('txDetail.fromAccount')} value={tx.account_title} />
           )}
@@ -127,7 +128,7 @@ export function TxDetailSheet({
               value={<span dir="ltr">{faDigits(tx.reference)}</span>}
             />
           )}
-          {tx.description && <ListRow title={t('common.description')} subtitle={tx.description} />}
+          {tx.description && <ListRow title={t('common.service')} subtitle={tx.description} />}
           <ListRow
             title={t('txDetail.ledgerStatus')}
             value={

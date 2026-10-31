@@ -185,7 +185,12 @@ class Transaction(TimestampMixin, Base):
     type: Mapped[TxType] = mapped_column(_enum(TxType, "tx_type"))
     amount: Mapped[int] = mapped_column(BigInteger)
     occurred_on: Mapped[date] = mapped_column(Date, index=True)
-    description: Mapped[str | None] = mapped_column(String(300))
+    description: Mapped[str | None] = mapped_column(
+        String(300)
+    )  # the service: implant, deposit, toothbrush…
+    doctor: Mapped[str | None] = mapped_column(
+        String(80)
+    )  # the treating doctor, as the sheet records it
 
     # Payment / refund details — the "bank transfer" view of the row.
     payer_name: Mapped[str | None] = mapped_column(String(120))  # None = the patient

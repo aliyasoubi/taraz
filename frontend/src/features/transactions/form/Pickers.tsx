@@ -138,6 +138,60 @@ export function PayerPicker({
   )
 }
 
+/** The treating doctor: typed, or one already used. */
+export function DoctorPicker({
+  value,
+  onChange,
+  onDone,
+}: {
+  value: string
+  onChange: (doctor: string) => void
+  onDone: () => void
+}) {
+  const known = useSuggestions().data?.doctors ?? []
+  const matches = value.trim() ? known.filter((n) => fold(n).includes(fold(value.trim()))) : known
+
+  return (
+    <FormPage>
+      <ListSection className="mt-2">
+        <ListRow
+          title={t('txForm.noDoctor')}
+          checked={!value.trim()}
+          onClick={() => {
+            onChange('')
+            onDone()
+          }}
+        />
+      </ListSection>
+      <ListSection header={t('txForm.doctor')}>
+        <ListRow>
+          <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={t('txForm.doctorPlaceholder')}
+            className="min-w-0 flex-1 bg-transparent text-[17px] caret-brand outline-none placeholder:text-ink-3"
+          />
+        </ListRow>
+      </ListSection>
+      {matches.length > 0 && (
+        <ListSection header={t('txForm.previousDoctors')}>
+          {matches.slice(0, 15).map((n) => (
+            <ListRow
+              key={n}
+              title={n}
+              checked={value === n}
+              onClick={() => {
+                onChange(n)
+                onDone()
+              }}
+            />
+          ))}
+        </ListSection>
+      )}
+    </FormPage>
+  )
+}
+
 /** Where the money went (or, for a refund, came from). */
 export function AccountPicker({
   accounts,

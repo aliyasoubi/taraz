@@ -1,5 +1,12 @@
 // The transaction form's state and rules, free of React so they can be unit-tested.
-import type { ChequeStatus, PaymentMethod, Transaction, TransactionInput, TxType } from '@/shared/api/types'
+import type {
+  AccountKind,
+  ChequeStatus,
+  PaymentMethod,
+  Transaction,
+  TransactionInput,
+  TxType,
+} from '@/shared/api/types'
 
 export interface TxPreset {
   patientId?: number
@@ -13,7 +20,9 @@ export interface TxFormState {
   treatmentId: number | null
   amount: number | null
   occurredOn: string
+  /** The service, as the sheet's second column: implant, deposit, toothbrush… */
   description: string
+  doctor: string
   payerIsSomeoneElse: boolean
   payerName: string
   accountId: number | null
@@ -39,6 +48,7 @@ export function initialFormState(opts: {
     amount: editing?.amount ?? null,
     occurredOn: editing?.occurred_on ?? today,
     description: editing?.description ?? '',
+    doctor: editing?.doctor ?? '',
     payerIsSomeoneElse: Boolean(editing?.payer_name),
     payerName: editing?.payer_name ?? '',
     accountId: editing ? editing.account_id : lastAccountId,
@@ -63,6 +73,20 @@ export function methodsFor(type: TxType): PaymentMethod[] {
   return METHODS.filter((m) => type === 'payment' || m !== 'cheque')
 }
 
+/** How money reached an account, by the kind of account: a card reader, the cash box, or a transfer. */
+export function methodForAccount(kind: AccountKind | undefined): PaymentMethod {
+  return kind === 'pos' ? 'pos' : kind === 'cash' ? 'cash' : 'card'
+}
+
+/**
+ * An item or visit fee paid on the spot (a toothbrush, a visit): the payment also
+ * records its charge, so it leaves what the patient owes untouched.
+ */
+export function isSale(form: Pick<TxFormState, 'type' | 'description'>, saleItems: readonly string[]): boolean {
+  const service = form.description.trim()
+  return form.type === 'payment' && service !== '' && saleItems.includes(service)
+}
+
 export function canSubmit(form: TxFormState): boolean {
   return Boolean(
     form.patientId && form.amount && form.amount > 0 && form.occurredOn && (!isCheque(form) || form.chequeDueOn),
@@ -70,7 +94,7 @@ export function canSubmit(form: TxFormState): boolean {
 }
 
 /** The API body. Fields that don't apply to the type are sent as null. */
-export function toPayload(form: TxFormState): TransactionInput {
+export function toPayload(form: TxFormState, saleItems: readonly string[] = []): TransactionInput {
   if (!form.patientId || !form.amount) throw new Error('toPayload called on an incomplete form')
   const money = movesMoney(form.type)
   const cheque = isCheque(form)
@@ -81,11 +105,13 @@ export function toPayload(form: TxFormState): TransactionInput {
     amount: form.amount,
     occurred_on: form.occurredOn,
     description: form.description.trim() || null,
+    doctor: form.doctor.trim() || null,
     payer_name: form.type === 'payment' && form.payerIsSomeoneElse ? form.payerName.trim() || null : null,
     account_id: money ? form.accountId : null,
     method: money ? form.method : null,
     reference: money ? form.reference.trim() || null : null,
     cheque_due_on: cheque ? form.chequeDueOn : null,
     cheque_status: cheque ? form.chequeStatus : null,
+    with_charge: isSale(form, saleItems),
   }
 }

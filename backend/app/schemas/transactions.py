@@ -3,7 +3,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from app.models import ChequeStatus, PaymentMethod, TxType
-from app.schemas.common import ORM, Amount, OptStr64, OptStr120, OptStr300
+from app.schemas.common import ORM, Amount, OptStr64, OptStr80, OptStr120, OptStr300
 
 
 class TransactionIn(BaseModel):
@@ -13,12 +13,15 @@ class TransactionIn(BaseModel):
     amount: Amount
     occurred_on: date
     description: OptStr300 = None
+    doctor: OptStr80 = None
     payer_name: OptStr120 = None
     account_id: int | None = None
     method: PaymentMethod | None = None
     reference: OptStr64 = None
     cheque_due_on: date | None = None
     cheque_status: ChequeStatus | None = None
+    # A payment for an item or visit fee paid on the spot also records its charge.
+    with_charge: bool = False
 
 
 class TransactionPatch(BaseModel):
@@ -30,6 +33,7 @@ class TransactionPatch(BaseModel):
     amount: Amount | None = None
     occurred_on: date | None = None
     description: OptStr300 = None
+    doctor: OptStr80 = None
     payer_name: OptStr120 = None
     account_id: int | None = None
     method: PaymentMethod | None = None
@@ -48,6 +52,7 @@ class TransactionOut(ORM):
     amount: int
     occurred_on: date
     description: str | None
+    doctor: str | None
     payer_name: str | None
     account_id: int | None
     account_title: str | None

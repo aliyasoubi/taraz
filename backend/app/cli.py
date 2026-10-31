@@ -2,8 +2,8 @@
 
 python -m app.cli hash-password
 python -m app.cli backup /data/backups [--keep 30]
-python -m app.cli standardize-legacy old.xlsx standard.xlsx [--as-of 1405-08-01]
-python -m app.cli import-workbook standard.xlsx [--dry-run]   # or `-` to read stdin
+python -m app.cli convert-spreadsheet practice.xlsx standard.xlsx [--as-of 1405-08-01]
+python -m app.cli import-workbook standard.xlsx [--dry-run] [--replace]   # or `-` for stdin
 python -m app.cli seed-demo        # fake data, for trying the UI
 """
 
@@ -19,7 +19,8 @@ from app.core.errors import ConflictError, InvalidError
 from app.core.security import hash_password
 from app.services.backup import backup_sqlite, sqlite_path
 from app.services.demo import seed_demo
-from app.services.legacy.convert import convert_legacy
+from app.services.spreadsheet.convert import convert_spreadsheet
+from app.services.transactions import count_transactions
 from app.services.workbook.importer import import_book
 from app.services.workbook.reader import read_book
 from app.services.workbook.writer import write_book
@@ -50,12 +51,12 @@ def cmd_backup(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_standardize_legacy(args: argparse.Namespace) -> int:
+def cmd_convert_spreadsheet(args: argparse.Namespace) -> int:
     as_of = parse_jalali(args.as_of) if args.as_of else today()
     if as_of is None:
         print(f"Could not read --as-of {args.as_of!r}; use e.g. 1405-08-01", file=sys.stderr)
         return 1
-    book = convert_legacy(Path(args.source), as_of, settle_unlisted=args.settle_unlisted)
+    book = convert_spreadsheet(Path(args.source), as_of, settle_unlisted=args.settle_unlisted)
     Path(args.out).write_bytes(write_book(book))
     receivable = sum(p.balance for p in book.patients if p.balance > 0)
     print(
@@ -77,15 +78,21 @@ def cmd_import_workbook(args: argparse.Namespace) -> int:
             print(f"  {error}", file=sys.stderr)
         return 1
     with new_session() as db:
+        replaced = count_transactions(db) if args.replace else 0
         try:
-            summary = import_book(db, result.book, dry_run=args.dry_run, force=args.force)
+            summary = import_book(
+                db, result.book, dry_run=args.dry_run, force=args.force, replace=args.replace
+            )
         except ConflictError:
             print(
-                "The ledger already has transactions; pass --force to add to it.", file=sys.stderr
+                "The ledger already has transactions; pass --replace to swap it for this "
+                "workbook, or --force to add to it.",
+                file=sys.stderr,
             )
             return 1
     print(
         f"{'[dry run, nothing saved] ' if args.dry_run else ''}"
+        f"{f'replaced {replaced} earlier transactions; ' if args.replace else ''}"
         f"{summary.transactions} transactions, {summary.patients} patients, "
         f"{summary.accounts} accounts, {summary.treatments} treatment cases; "
         f"receivable {summary.receivable:,}, credit {summary.credit:,}, "
@@ -115,7 +122,9 @@ def main(argv: list[str] | None = None) -> int:
     bak.add_argument("out_dir")
     bak.add_argument("--keep", type=int, default=30, help="how many backups to keep")
     bak.set_defaults(fn=cmd_backup)
-    std = sub.add_parser("standardize-legacy", help="old workbook → standard workbook for review")
+    std = sub.add_parser(
+        "convert-spreadsheet", help="practice workbook → standard workbook for review"
+    )
     std.add_argument("source")
     std.add_argument("out")
     std.add_argument("--as-of", help="Jalali date of the debtors list (default: today)")
@@ -124,11 +133,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="close every balance that is not on the debtors list (default: keep and flag)",
     )
-    std.set_defaults(fn=cmd_standardize_legacy)
+    std.set_defaults(fn=cmd_convert_spreadsheet)
     imp = sub.add_parser("import-workbook", help="load a reviewed standard workbook")
     imp.add_argument("path", help="the .xlsx file, or - for stdin")
     imp.add_argument("--dry-run", action="store_true", help="check and summarize, save nothing")
     imp.add_argument("--force", action="store_true", help="import even if the ledger is not empty")
+    imp.add_argument(
+        "--replace",
+        action="store_true",
+        help="remove every patient, account and transaction first (take a backup before)",
+    )
     imp.set_defaults(fn=cmd_import_workbook)
     sub.add_parser("seed-demo", help="fill an empty database with fake data").set_defaults(
         fn=cmd_seed_demo

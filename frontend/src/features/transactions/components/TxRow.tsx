@@ -64,7 +64,9 @@ export function TxRow({ tx, showPatient }: { tx: Transaction; showPatient?: bool
               </>
             ) : (
               <span className="truncate">
-                {showPatient ? txTitle(tx) : (tx.treatment_title ?? formatJ(tx.occurred_on))}
+                {showPatient
+                  ? txTitle(tx)
+                  : [tx.treatment_title, tx.doctor].filter(Boolean).join(' · ') || formatJ(tx.occurred_on)}
               </span>
             )}
           </span>

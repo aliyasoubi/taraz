@@ -13,6 +13,7 @@ const payment: Transaction = {
   amount: 1_500,
   occurred_on: '2026-10-23',
   description: null,
+  doctor: null,
   payer_name: 'Mohammad',
   account_id: 2,
   account_title: 'Mr. Ghomi',

@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, FileSpreadsheet } from 'lucide-react'
+import { CalendarDays, FileSpreadsheet } from 'lucide-react'
 import { useMonthlyReport } from '@/features/reports/api'
 import { download, qs } from '@/shared/api/client'
 import { faDigits } from '@/shared/lib/format'
@@ -59,16 +59,6 @@ export function MonthPage() {
             }
             title={t('month.download')}
             onClick={() => download(`/reports/monthly.xlsx${qs({ year: month.jy, month: month.jm })}`)}
-          />
-          <ListRow
-            icon={
-              <ListIcon tone="info">
-                <ChartColumn />
-              </ListIcon>
-            }
-            title={t('month.details')}
-            to="/reports"
-            chevron
           />
         </ListSection>
 

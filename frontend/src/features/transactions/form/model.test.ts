@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canSubmit, initialFormState, methodsFor, toPayload, type TxFormState } from './model'
+import { canSubmit, initialFormState, isSale, methodForAccount, methodsFor, toPayload, type TxFormState } from './model'
 
 const base = (patch: Partial<TxFormState> = {}): TxFormState => ({
   ...initialFormState({ lastAccountId: 4, today: '2026-10-23' }),
@@ -35,5 +35,22 @@ describe('transaction form model', () => {
   it('only offers cheques for incoming payments', () => {
     expect(methodsFor('payment')).toContain('cheque')
     expect(methodsFor('refund')).not.toContain('cheque')
+  })
+
+  it('records the doctor, and a sale paid on the spot as charge + payment', () => {
+    const items = ['toothbrush', 'visit']
+    const sale = toPayload(base({ description: ' toothbrush ', doctor: ' Dr Emami ' }), items)
+    expect([sale.doctor, sale.with_charge]).toEqual(['Dr Emami', true])
+    expect(isSale(base({ description: 'implant' }), items)).toBe(false)
+    expect(isSale(base({ type: 'charge', description: 'visit' }), items)).toBe(false)
+  })
+
+  it('takes the method from the kind of account', () => {
+    expect([
+      methodForAccount('pos'),
+      methodForAccount('cash'),
+      methodForAccount('own'),
+      methodForAccount(undefined),
+    ]).toEqual(['pos', 'cash', 'card', 'card'])
   })
 })

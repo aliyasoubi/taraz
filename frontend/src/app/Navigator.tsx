@@ -10,7 +10,6 @@ import { MonthPage } from '@/features/reports/MonthPage'
 import { PatientPage } from '@/features/patients/PatientPage'
 import { PatientsPage } from '@/features/patients/PatientsPage'
 import { ReceiptsPage } from '@/features/transactions/ReceiptsPage'
-import { ReportsPage } from '@/features/reports/ReportsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 
 function AppRoutes({ location }: { location: string }) {
@@ -22,7 +21,6 @@ function AppRoutes({ location }: { location: string }) {
       <Route path="/month" element={<MonthPage />} />
       <Route path="/accounts" element={<AccountsPage />} />
       <Route path="/accounts/:id" element={<AccountPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
       <Route path="/cheques" element={<ChequesPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />

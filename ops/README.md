@@ -110,16 +110,17 @@ patient-book's Caddy, and checks `https://taraz.dentixo.ir`.
 
 On the iPhone: open `https://taraz.dentixo.ir` in Safari → Share → **Add to Home Screen**.
 
-## 5. Move the old workbook in
+## 5. Move the practice's workbook in
 
-On your Mac, from `backend/` (the old workbook never needs to reach the server):
+On your Mac, from `backend/` (the workbook itself never needs to reach the server):
 
 ```bash
-.venv/bin/python -m app.cli standardize-legacy /path/to/old-workbook.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
+.venv/bin/python -m app.cli convert-spreadsheet /path/to/practice.xlsx data/import/taraz-standard.xlsx --as-of 1405-08-01
 ```
 
-Review `data/import/taraz-standard.xlsx` (see "Reviewing the standard
-workbook" in the main README), then copy it up and import:
+`--as-of` is the date of the workbook's debtors list. Review
+`data/import/taraz-standard.xlsx` (see "Reviewing the standard workbook" in the
+main README), then copy it up and import:
 
 ```bash
 scp backend/data/import/taraz-standard.xlsx <user>@<vps>:/tmp/taraz-standard.xlsx
@@ -141,8 +142,26 @@ rm /tmp/taraz-standard.xlsx
 ```
 
 The import is all-or-nothing and refuses to run into a ledger that already has
-transactions. To redo it, restore the pre-import backup (below) or wipe the
-fresh ledger with `docker compose down -v` before anyone has entered real data.
+transactions.
+
+### Replacing an earlier import
+
+When a corrected workbook should take the place of what is in the app, back up
+first, then add `--replace`. It removes every patient, account and transaction,
+and anything entered in the app since the last import goes with them. The
+output says how many earlier transactions it replaced.
+
+```bash
+cd /opt/taraz && ./ops/backup.sh
+```
+
+```bash
+docker compose exec -T taraz python -m app.cli import-workbook - --replace --dry-run < /tmp/taraz-standard.xlsx
+```
+
+```bash
+docker compose exec -T taraz python -m app.cli import-workbook - --replace < /tmp/taraz-standard.xlsx
+```
 
 ## Backups
 

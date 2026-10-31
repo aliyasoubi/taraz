@@ -1,4 +1,4 @@
-import { Archive, ArchiveRestore, ArrowUpRight, BadgePercent, FolderPlus, Pencil, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, BadgePercent, FolderPlus, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { useDeletePatient, useSavePatient } from '@/features/patients/api'
@@ -65,15 +65,6 @@ export function PatientMenuSheet({
             }
             title={t('patient.addDiscount')}
             onClick={() => onAdd('discount')}
-          />
-          <ListRow
-            icon={
-              <ListIcon tone="brand">
-                <ArrowUpRight />
-              </ListIcon>
-            }
-            title={t('patient.addRefund')}
-            onClick={() => onAdd('refund')}
           />
           <ListRow
             icon={

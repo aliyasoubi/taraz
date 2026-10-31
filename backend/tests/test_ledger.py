@@ -177,3 +177,29 @@ def test_domain_errors_map_to_http_status(api: Api) -> None:
         },
     )
     assert (r.status_code, r.json()["detail"]) == (422, "account_not_found")
+
+
+def test_item_paid_on_the_spot_records_charge_and_payment(api: Api) -> None:
+    pid = api.patient()
+    api.tx(pid, "charge", 300, doctor="Dr Emami")
+    api.tx(pid, "payment", 15, description="toothbrush", with_charge=True)
+    rows = api.c.get(f"/api/patients/{pid}/transactions").json()
+    sale = [r for r in rows if r["description"] == "toothbrush"]
+    assert sorted(r["type"] for r in sale) == ["charge", "payment"]
+    assert api.c.get(f"/api/patients/{pid}").json()["balance"] == 300  # the debt is untouched
+    assert "Dr Emami" in api.c.get("/api/suggestions").json()["doctors"]
+
+
+def test_with_charge_is_only_for_payments(api: Api) -> None:
+    pid = api.patient()
+    r = api.c.post(
+        "/api/transactions",
+        json={
+            "patient_id": pid,
+            "type": "charge",
+            "amount": 5,
+            "occurred_on": "2026-10-01",
+            "with_charge": True,
+        },
+    )
+    assert r.status_code == 422 and r.json()["detail"] == "with_charge_needs_payment"
