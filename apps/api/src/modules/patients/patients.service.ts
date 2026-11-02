@@ -137,7 +137,6 @@ export class PatientsService {
     return this.patients.save(
       this.patients.create({
         name: dto.name,
-        nameKey: searchKey(dto.name),
         phone: dto.phone ?? null,
         note: dto.note ?? null,
       }),
@@ -146,10 +145,7 @@ export class PatientsService {
 
   async update(id: string, dto: UpdatePatientDto): Promise<Patient> {
     const patient = await this.get(id);
-    if (dto.name !== undefined) {
-      patient.name = dto.name;
-      patient.nameKey = searchKey(dto.name);
-    }
+    if (dto.name !== undefined) patient.name = dto.name;
     if (dto.phone !== undefined) patient.phone = dto.phone;
     if (dto.note !== undefined) patient.note = dto.note;
     return this.patients.save(patient);

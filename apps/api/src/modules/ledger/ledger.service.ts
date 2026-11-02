@@ -3,11 +3,10 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In } from 'typeorm';
 
 import { InvalidInputError, NotFoundError } from '../../common/errors';
-import { searchKey } from '../../common/persian-text';
 import { Account } from '../catalog/account.entity';
 import { Doctor } from '../catalog/doctor.entity';
 import { Patient } from '../patients/patient.entity';
-import { planDeposits } from './deposits';
+import { planDeposits, takesDeposits } from './deposits';
 import { Entry } from './entry.entity';
 import {
   EntryDto,
@@ -93,7 +92,9 @@ export class LedgerService {
       for (const payment of dto.payments ?? []) {
         await m.getRepository(Payment).save(toPayment(entry.id, payment));
       }
-      if (dto.applyDeposits) await this.moveDeposits(m, entry.id, false);
+      if (dto.applyDeposits) {
+        await this.moveDeposits(m, await this.getEntry(entry.id, m));
+      }
       return this.getEntry(entry.id, m);
     });
   }
@@ -101,7 +102,11 @@ export class LedgerService {
   /** Puts the patient's deposits toward what is still owed on this entry. */
   applyDeposits(entryId: string): Promise<EntryView> {
     return this.db.transaction(async (m) => {
-      await this.moveDeposits(m, entryId, true);
+      const target = await this.getEntry(entryId, m);
+      if (!takesDeposits(target)) throw new InvalidInputError('nothing_owed');
+      if (!(await this.moveDeposits(m, target))) {
+        throw new InvalidInputError('no_deposit');
+      }
       return this.getEntry(entryId, m);
     });
   }
@@ -168,39 +173,28 @@ export class LedgerService {
    * Moves deposit payments onto the entry, oldest first, up to what is owed
    * on it; a payment larger than that is split. A deposit left empty goes,
    * its description kept as the note of the payments that came from it.
-   * `required`: refuse instead of doing nothing.
+   * Returns what was applied.
    */
   private async moveDeposits(
     m: EntityManager,
-    entryId: string,
-    required: boolean,
-  ): Promise<void> {
-    const target = await this.getEntry(entryId, m);
-    if (target.category === 'deposit' || target.remaining <= 0) {
-      if (required) throw new InvalidInputError('nothing_owed');
-      return;
-    }
+    target: EntryView,
+  ): Promise<number> {
+    if (!takesDeposits(target)) return 0;
     const repo = m.getRepository(Payment);
     const held = await repo.find({
       where: { entry: { patientId: target.patientId, category: 'deposit' } },
       relations: { entry: true },
       order: { date: 'ASC', createdAt: 'ASC' },
     });
-    if (!held.length) {
-      if (required) throw new InvalidInputError('no_deposit');
-      return;
-    }
     const plan = planDeposits(target.remaining, held);
     const carried = (p: Payment) => ({
-      entryId,
+      entryId: target.id,
       note: p.note ?? p.entry?.description ?? null,
     });
-    for (const p of held.filter((h) => plan.move.includes(h.id))) {
-      await repo.update(p.id, carried(p));
-    }
+    for (const p of plan.move) await repo.update(p.id, carried(p));
     if (plan.split) {
-      const p = held.find((h) => h.id === plan.split!.id)!;
-      await repo.update(p.id, { amount: p.amount - plan.split.amount });
+      const { payment: p, amount } = plan.split;
+      await repo.update(p.id, { amount: p.amount - amount });
       await repo.save(
         repo.create({
           date: p.date,
@@ -208,13 +202,14 @@ export class LedgerService {
           source: p.source,
           accountId: p.accountId,
           ...carried(p),
-          amount: plan.split.amount,
+          amount,
         }),
       );
     }
     if (plan.emptied.length) {
       await m.getRepository(Entry).delete({ id: In(plan.emptied) });
     }
+    return plan.applied;
   }
 
   private async resolvePatient(
@@ -231,7 +226,6 @@ export class LedgerService {
     const patient = await m.getRepository(Patient).save(
       m.getRepository(Patient).create({
         name: dto.patientName,
-        nameKey: searchKey(dto.patientName),
         phone: dto.patientPhone ?? null,
       }),
     );

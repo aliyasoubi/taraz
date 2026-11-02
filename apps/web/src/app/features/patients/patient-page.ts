@@ -5,7 +5,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { filter, switchMap } from 'rxjs';
+import { Observable, filter, switchMap } from 'rxjs';
 
 import { Notifier } from '../../core/i18n/api-error';
 import type { Account, Entry, PatientDetail, Payment } from '../../core/models/api.model';
@@ -109,20 +109,17 @@ export class PatientPage {
   protected remove(): void {
     const p = this.patient();
     if (!p) return;
-    this.confirm({
-      title: this.i18n.instant('patient.deleteTitle'),
-      message: this.i18n.instant('patient.deleteMessage', { name: p.name }),
-      confirmLabel: this.i18n.instant('action.delete'),
-      tone: 'warn',
-    })
-      .pipe(switchMap(() => this.api.deletePatient(p.id)))
-      .subscribe({
-        next: () => {
-          this.notifier.done('patient.deleted');
-          void this.router.navigate(['/patients']);
-        },
-        error: (err: unknown) => this.notifier.error(err),
-      });
+    this.confirmThen(
+      this.deletion(
+        this.i18n.instant('patient.deleteTitle'),
+        this.i18n.instant('patient.deleteMessage', { name: p.name }),
+      ),
+      () => this.api.deletePatient(p.id),
+      () => {
+        this.notifier.done('patient.deleted');
+        void this.router.navigate(['/patients']);
+      },
+    );
   }
 
   protected addPayment(entry: Entry): void {
@@ -136,24 +133,20 @@ export class PatientPage {
   }
 
   protected applyDeposits(entry: Entry): void {
-    this.confirm({
-      title: this.i18n.instant('entry.applyDepositsTitle'),
-      message: this.i18n.instant('entry.applyDepositsMessage', {
-        amount: formatMoney(this.depositsFor(entry)),
-      }),
-      confirmLabel: this.i18n.instant('entry.applyDeposits'),
-    })
-      .pipe(switchMap(() => this.api.applyDeposits(entry.id)))
-      .subscribe({
-        next: (updated) => {
-          this.notifier.done(
-            updated.remaining > 0 ? 'entry.depositsApplied' : 'entry.depositsSettled',
-            { amount: formatMoney(updated.remaining) },
-          );
-          this.load();
-        },
-        error: (err: unknown) => this.notifier.error(err),
-      });
+    this.confirmThen(
+      {
+        title: this.i18n.instant('entry.applyDepositsTitle'),
+        message: this.i18n.instant('entry.applyDepositsMessage', {
+          amount: formatMoney(this.depositsFor(entry)),
+        }),
+        confirmLabel: this.i18n.instant('entry.applyDeposits'),
+      },
+      () => this.api.applyDeposits(entry.id),
+      (updated) =>
+        this.reloadWith(updated.remaining > 0 ? 'entry.depositsApplied' : 'entry.depositsSettled', {
+          amount: formatMoney(updated.remaining),
+        }),
+    );
   }
 
   protected editPayment(entry: Entry, payment: Payment): void {
@@ -161,37 +154,25 @@ export class PatientPage {
   }
 
   protected removePayment(payment: Payment): void {
-    this.confirm({
-      title: this.i18n.instant('payment.deleteTitle'),
-      message: this.i18n.instant('payment.deleteMessage', { amount: formatMoney(payment.amount) }),
-      confirmLabel: this.i18n.instant('action.delete'),
-      tone: 'warn',
-    })
-      .pipe(switchMap(() => this.api.deletePayment(payment.id)))
-      .subscribe({
-        next: () => {
-          this.notifier.done('payment.deleted');
-          this.load();
-        },
-        error: (err: unknown) => this.notifier.error(err),
-      });
+    this.confirmThen(
+      this.deletion(
+        this.i18n.instant('payment.deleteTitle'),
+        this.i18n.instant('payment.deleteMessage', { amount: formatMoney(payment.amount) }),
+      ),
+      () => this.api.deletePayment(payment.id),
+      () => this.reloadWith('payment.deleted'),
+    );
   }
 
   protected removeEntry(entry: Entry): void {
-    this.confirm({
-      title: this.i18n.instant('entry.deleteTitle'),
-      message: this.i18n.instant('entry.deleteMessage'),
-      confirmLabel: this.i18n.instant('action.delete'),
-      tone: 'warn',
-    })
-      .pipe(switchMap(() => this.api.deleteEntry(entry.id)))
-      .subscribe({
-        next: () => {
-          this.notifier.done('entry.deleted');
-          this.load();
-        },
-        error: (err: unknown) => this.notifier.error(err),
-      });
+    this.confirmThen(
+      this.deletion(
+        this.i18n.instant('entry.deleteTitle'),
+        this.i18n.instant('entry.deleteMessage'),
+      ),
+      () => this.api.deleteEntry(entry.id),
+      () => this.reloadWith('entry.deleted'),
+    );
   }
 
   protected readonly balanceLabel = balanceLabel;
@@ -207,10 +188,30 @@ export class PatientPage {
       .subscribe(() => this.load());
   }
 
-  private confirm(data: ConfirmData) {
-    return this.dialog
+  /** Asks first; once confirmed runs `action`, then `after` with its result. */
+  private confirmThen<T>(
+    data: ConfirmData,
+    action: () => Observable<T>,
+    after: (result: T) => void,
+  ): void {
+    this.dialog
       .open<ConfirmDialog, ConfirmData, boolean>(ConfirmDialog, { data })
       .afterClosed()
-      .pipe(filter((ok): ok is true => ok === true));
+      .pipe(
+        filter((ok) => ok === true),
+        switchMap(action),
+      )
+      .subscribe({ next: after, error: (err: unknown) => this.notifier.error(err) });
+  }
+
+  /** A prompt for removing something: the warning tone and a delete button. */
+  private deletion(title: string, message: string): ConfirmData {
+    return { title, message, confirmLabel: this.i18n.instant('action.delete'), tone: 'warn' };
+  }
+
+  /** Says what was done and shows the account as it now is. */
+  private reloadWith(message: string, params?: Record<string, unknown>): void {
+    this.notifier.done(message, params);
+    this.load();
   }
 }

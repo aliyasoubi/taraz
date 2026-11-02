@@ -230,6 +230,26 @@ describeIf('ledger (e2e)', () => {
     );
   });
 
+  it('finds a patient by the new name once renamed', async () => {
+    const created = await api()
+      .post('/api/patients')
+      .set('Cookie', cookie)
+      .send({ name: 'Old Name' })
+      .expect(201);
+    await api()
+      .patch(`/api/patients/${created.body.id}`)
+      .set('Cookie', cookie)
+      .send({ name: 'Renamed Patient' })
+      .expect(200);
+    const found = await api()
+      .get('/api/patients?q=renamed')
+      .set('Cookie', cookie)
+      .expect(200);
+    expect(found.body.items).toEqual([
+      expect.objectContaining({ id: created.body.id }),
+    ]);
+  });
+
   it('answers a bad body with field codes, not prose', async () => {
     const res = await api()
       .post('/api/entries')

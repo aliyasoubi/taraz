@@ -6,7 +6,6 @@ import {
   monthRange,
   previousMonth,
 } from '../../common/jalali';
-import { searchKey } from '../../common/persian-text';
 import { text } from '../../i18n';
 import { Account } from '../../modules/catalog/account.entity';
 import { Doctor } from '../../modules/catalog/doctor.entity';
@@ -77,7 +76,6 @@ async function main(): Promise<void> {
       const patient = await m.save(
         m.create(Patient, {
           name,
-          nameKey: searchKey(name),
           phone:
             rand() < 0.7
               ? `0912${String(Math.floor(rand() * 1e7)).padStart(7, '0')}`

@@ -277,9 +277,7 @@ async function main(): Promise<void> {
       for (const planned of plan.patients) {
         let patient = byKey.get(planned.key);
         if (!patient) {
-          patient = await m.save(
-            m.create(Patient, { name: planned.name, nameKey: planned.key }),
-          );
+          patient = await m.save(m.create(Patient, { name: planned.name }));
         }
         for (const e of planned.entries) {
           const entry = await m.save(
