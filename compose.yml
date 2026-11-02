@@ -1,0 +1,87 @@
+# Taraz on the VPS, next to patient-book.
+#
+#   ./ops/deploy.sh
+#
+# No port is published. patient-book's Caddy already owns 80/443; it reaches
+# the app over patient-book's Docker network as http://taraz:3400, through the
+# site file ops/deploy.sh publishes (ops/caddy/site.caddy.template). The
+# database is on this project's own network only, never on patient-book's.
+# Configuration comes from `.env` beside this file; see .env.production.example.
+name: taraz
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  taraz:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-alpine}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+    image: taraz:latest
+    restart: unless-stopped
+    depends_on:
+      taraz-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: taraz-db
+      DB_PORT: 5432
+      DB_USER: dental
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      DB_NAME: taraz
+      # The app refuses to start in production without a JWT_SECRET of 32+ characters.
+      JWT_SECRET: ${JWT_SECRET:-}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      CLINIC_TIMEZONE: ${CLINIC_TIMEZONE:-Asia/Tehran}
+      # The same clock for the logs.
+      TZ: ${CLINIC_TIMEZONE:-Asia/Tehran}
+      CORS_ORIGIN: https://${TARAZ_DOMAIN:?set TARAZ_DOMAIN in .env}
+    # Caps so Taraz can never starve patient-book on the same VPS.
+    mem_limit: 384m
+    cpus: 1.0
+    pids_limit: 200
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    networks: [default, proxy]
+    logging: *logging
+
+  # A name of its own: on patient-book's network a plain `db` could be theirs.
+  taraz-db:
+    image: ${POSTGRES_IMAGE:-postgres:17-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dental
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      POSTGRES_DB: taraz
+    volumes:
+      - taraz_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dental -d taraz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 200
+    shm_size: 128mb
+    security_opt:
+      - no-new-privileges:true
+    networks: [default]
+    logging: *logging
+
+volumes:
+  # The ledger. Losing it loses the books — ops/backup.sh copies it out daily.
+  taraz_pg:
+
+networks:
+  proxy:
+    # patient-book's compose project is `patient-book`, its network `internal`.
+    name: ${PROXY_NETWORK:-patient-book_internal}
+    external: true

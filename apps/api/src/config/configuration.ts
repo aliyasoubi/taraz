@@ -12,6 +12,8 @@ export interface AppConfig {
   corsOrigin: string[];
   trustProxy: number;
   timezone: string;
+  /** The built web app to serve beside the API (production); null in development. */
+  webDist: string | null;
   db: {
     host: string;
     port: number;
@@ -63,6 +65,7 @@ export function buildConfiguration(
       .filter(Boolean),
     trustProxy: int(env.TRUST_PROXY, mode === 'production' ? 1 : 0),
     timezone: env.CLINIC_TIMEZONE?.trim() || 'Asia/Tehran',
+    webDist: env.WEB_DIST?.trim() || null,
     db: {
       host: env.DB_HOST ?? 'localhost',
       port: int(env.DB_PORT, 5432),

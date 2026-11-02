@@ -1,0 +1,9 @@
+[Unit]
+Description=Back up the Taraz ledger
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/taraz
+ExecStart=/opt/taraz/ops/backup.sh

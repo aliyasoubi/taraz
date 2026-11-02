@@ -131,7 +131,15 @@ payment explains are listed under "To check" and lower the latest cost.
 apps/api      NestJS: auth, catalog (doctors, accounts), patients, ledger
               (entries + payments), reports (month report, Excel), import (CLI)
 apps/web      Angular: month, patients, patient, debtors, entry form, settings
+ops           Deploying on the VPS beside patient-book: Docker Compose (app +
+              Postgres), deploy, backup and restore scripts
 ```
+
+## Deploying
+
+One image: the API serves the built web app (`WEB_DIST`), next to Postgres in
+the same Compose project, behind patient-book's Caddy. The steps, backups and
+updates are in [ops/README.md](ops/README.md).
 
 ## Checks
 
