@@ -1,0 +1,180 @@
+<tz-page>
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (failed()) {
+    <tz-load-error [message]="'common.loadError' | translate" (retry)="load()" />
+  } @else if (patient(); as p) {
+    <tz-page-header
+      [title]="p.name"
+      [subtitle]="subtitle()"
+      [backLabel]="'patient.back' | translate"
+      (back)="back()"
+    >
+      <tz-button
+        icon="add"
+        [link]="['/entries/new']"
+        [queryParams]="{ patient: p.id }"
+        [collapseBelow]="600"
+      >
+        {{ 'patient.newEntry' | translate }}
+      </tz-button>
+      <tz-icon-button
+        icon="more_vert"
+        [menu]="patientMenu"
+        [ariaLabel]="'patient.menu' | translate"
+      />
+      <mat-menu #patientMenu="matMenu" xPosition="before">
+        <button mat-menu-item type="button" (click)="edit()">
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          <span>{{ 'patient.edit' | translate }}</span>
+        </button>
+        <button mat-menu-item type="button" class="danger" (click)="remove()">
+          <mat-icon aria-hidden="true">delete</mat-icon>
+          <span>{{ 'patient.delete' | translate }}</span>
+        </button>
+      </mat-menu>
+    </tz-page-header>
+
+    <section class="tiles">
+      <tz-money-tile
+        icon="receipt_long"
+        [value]="p.charged"
+        [label]="'patient.charged' | translate"
+      />
+      <tz-money-tile
+        icon="payments"
+        tone="good"
+        [value]="p.paid"
+        [label]="'patient.paid' | translate"
+      />
+      <tz-money-tile
+        [icon]="p.balance > 0 ? 'trending_down' : p.balance < 0 ? 'savings' : 'task_alt'"
+        [tone]="p.balance > 0 ? 'warn' : 'neutral'"
+        [value]="p.balance < 0 ? -p.balance : p.balance"
+        [label]="('patient.balance' | translate) + ' · ' + (balanceLabel(p.balance) | translate)"
+      />
+    </section>
+
+    @if (p.note) {
+      <p class="note"><mat-icon aria-hidden="true">sticky_note_2</mat-icon>{{ p.note }}</p>
+    }
+
+    <h2 class="section-title">{{ 'patient.entries' | translate }}</h2>
+
+    @for (entry of p.entries; track entry.id) {
+      <tz-surface class="entry">
+        <header class="entry__head">
+          <tz-category-chip [category]="entry.category" />
+          <span class="entry__date">{{ entry.date | jday }}</span>
+          @if (entry.doctor) {
+            <span class="entry__doctor">
+              <mat-icon aria-hidden="true">stethoscope</mat-icon>{{ entry.doctor.name }}
+            </span>
+          }
+          <span class="spacer"></span>
+          <tz-icon-button
+            icon="more_vert"
+            size="compact"
+            [menu]="entryMenu"
+            [ariaLabel]="'entry.menu' | translate"
+          />
+          <mat-menu #entryMenu="matMenu" xPosition="before">
+            <a mat-menu-item [routerLink]="['/entries', entry.id, 'edit']">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+              <span>{{ 'entry.edit' | translate }}</span>
+            </a>
+            <button mat-menu-item type="button" (click)="removeEntry(entry)">
+              <mat-icon aria-hidden="true">delete</mat-icon>
+              <span>{{ 'entry.delete' | translate }}</span>
+            </button>
+          </mat-menu>
+        </header>
+
+        @if (entry.description) {
+          <p class="entry__description">{{ entry.description }}</p>
+        }
+
+        <dl class="entry__sums">
+          @if (entry.category !== 'deposit') {
+            <div>
+              <dt>{{ 'column.charged' | translate }}</dt>
+              <dd><tz-amount [value]="entry.amount" /></dd>
+            </div>
+          }
+          <div>
+            <dt>{{ 'entry.paid' | translate }}</dt>
+            <dd class="paid"><tz-amount [value]="entry.paid" /></dd>
+          </div>
+          <div>
+            <dt>
+              {{ (entry.remaining < 0 ? 'entry.creditNote' : 'balance.remaining') | translate }}
+            </dt>
+            <dd><tz-amount tone="balance" [value]="entry.remaining" /></dd>
+          </div>
+        </dl>
+
+        <ul class="payments">
+          @for (payment of entry.payments; track payment.id) {
+            <li class="payment">
+              <mat-icon class="payment__icon" aria-hidden="true">south_west</mat-icon>
+              <div class="payment__body">
+                <div class="payment__line">
+                  <tz-amount class="payment__amount" [value]="payment.amount" />
+                  <span class="muted">{{ payment.date | jday }}</span>
+                  @if (entry.category !== 'deposit' && payment.date < entry.date) {
+                    <span class="muted">· {{ 'payment.beforeEntry' | translate }}</span>
+                  }
+                </div>
+                <div class="payment__route muted">
+                  <span>{{ payment.payerName ?? ('payment.patientPaid' | translate) }}</span>
+                  @if (payment.source) {
+                    <span>({{ payment.source }})</span>
+                  }
+                  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+                  <span>{{ payment.account?.title ?? ('payment.noAccount' | translate) }}</span>
+                </div>
+              </div>
+              <tz-icon-button
+                icon="more_horiz"
+                size="compact"
+                [menu]="paymentMenu"
+                [ariaLabel]="'payment.edit' | translate"
+              />
+              <mat-menu #paymentMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="editPayment(entry, payment)">
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                  <span>{{ 'payment.edit' | translate }}</span>
+                </button>
+                <button mat-menu-item type="button" (click)="removePayment(payment)">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  <span>{{ 'payment.delete' | translate }}</span>
+                </button>
+              </mat-menu>
+            </li>
+          } @empty {
+            <li class="payment payment--empty muted">{{ 'entry.noPayments' | translate }}</li>
+          }
+        </ul>
+
+        <div class="entry__actions">
+          <tz-button variant="text" icon="add_card" (click)="addPayment(entry)">
+            {{ 'payment.add' | translate }}
+          </tz-button>
+          @if (depositsFor(entry) > 0) {
+            <tz-button variant="text" icon="savings" (click)="applyDeposits(entry)">
+              {{ 'entry.applyDeposits' | translate }}
+            </tz-button>
+          }
+        </div>
+      </tz-surface>
+    } @empty {
+      <tz-empty-state
+        icon="receipt_long"
+        [title]="'patient.emptyTitle' | translate"
+        [hint]="'patient.emptyHint' | translate"
+      />
+    }
+  }
+</tz-page>

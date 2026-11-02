@@ -1,0 +1,36 @@
+/**
+ * The app's card looks, for elements that cannot be a `<tz-surface>`
+ * themselves — a list row that is an `<li>`, a tile that is an `<a>`, a toggle
+ * that is a `<button>`. `tz-surface` draws itself from these same mixins, so
+ * a row and a panel never drift apart.
+ *
+ * Card on canvas (tokens in `styles.scss`): the page ground is `--tz-canvas`;
+ * a card is a lighter tone lifted by a soft shadow; a tonal panel is a well, a
+ * step recessed from the canvas, that cards sit in; an elevated card is the
+ * one a screen is built around, like sign-in. Each keeps its 1px border box,
+ * transparent where it shows nothing, so the three line up.
+ */
+
+/** The card. `$corner` is an M3 shape step: large for cards, medium for rows inside one. */
+@mixin outlined($corner: large) {
+  border: 1px solid var(--tz-card-border);
+  border-radius: var(--mat-sys-corner-#{$corner});
+  background: var(--tz-card);
+  box-shadow: var(--tz-card-shadow);
+}
+
+/** The well: recessed from the canvas, flat, for cards to sit in. */
+@mixin tonal($corner: large) {
+  border-radius: var(--mat-sys-corner-#{$corner});
+  background: var(--tz-well);
+}
+
+/**
+ * M3 elevated card: lifted off the ground by a shadow rather than a border
+ * or a tone — for the one card a screen is built around, like sign-in.
+ */
+@mixin elevated($corner: large) {
+  border-radius: var(--mat-sys-corner-#{$corner});
+  background: var(--mat-sys-surface-container-low);
+  box-shadow: var(--mat-sys-level1);
+}

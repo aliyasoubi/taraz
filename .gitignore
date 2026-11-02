@@ -1,39 +1,29 @@
-# ── Real patient data: never commit ─────────────────────────────
+# ── Patient data ───────────────────────────────────────────────────────
+# The practice's workbook and anything exported from the app hold real
+# patient names and money. Never commit them.
 *.xlsx
 *.xls
+*.numbers
 *.csv
-*.db
-*.db-wal
-*.db-shm
-*.sqlite*
-backend/data/
-backups/
+data/
+*.sql
+*.dump
+*.backup
+
+# ── Secrets ────────────────────────────────────────────────────────────
 .env
 .env.*
 !.env.example
-!.env.production.example
-!backend/.env.example
 
-# ── Python ──────────────────────────────────────────────────────
-.venv/
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-backend/static/
-
-# ── Node ────────────────────────────────────────────────────────
+# ── Dependencies and build output ──────────────────────────────────────
 node_modules/
-frontend/dist/
-frontend/dev-dist/
+dist/
+.angular/
+coverage/
 *.tsbuildinfo
 
-# ── Editors / OS ────────────────────────────────────────────────
+# ── Editors and OS ─────────────────────────────────────────────────────
 .DS_Store
 .idea/
 .vscode/
-*.swp
-.claude/settings.local.json
+*.log

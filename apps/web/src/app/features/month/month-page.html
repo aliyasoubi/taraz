@@ -1,0 +1,369 @@
+<tz-page width="wide">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <tz-page-header
+    [title]="'monthPage.title' | translate"
+    [subtitle]="'monthPage.subtitle' | translate: { month: monthLabel(month()) }"
+  >
+    <tz-button
+      variant="stroked"
+      icon="download"
+      [loading]="exporting()"
+      [loadingText]="'monthPage.exporting' | translate"
+      [disabled]="!report()"
+      [collapseBelow]="600"
+      (click)="exportWorkbook()"
+    >
+      {{ 'monthPage.export' | translate }}
+    </tz-button>
+  </tz-page-header>
+
+  <div class="switcher" role="group" [attr.aria-label]="'monthPage.pick' | translate">
+    <tz-icon-button
+      icon="chevron_right"
+      [ariaLabel]="'monthPage.previous' | translate"
+      (click)="step(-1)"
+    />
+    <button type="button" class="switcher__month" [matMenuTriggerFor]="monthMenu">
+      <mat-icon aria-hidden="true">calendar_month</mat-icon>
+      <span>{{ monthLabel(month()) }}</span>
+      <mat-icon aria-hidden="true">expand_more</mat-icon>
+    </button>
+    <tz-icon-button
+      icon="chevron_left"
+      [ariaLabel]="'monthPage.next' | translate"
+      (click)="step(1)"
+    />
+    @if (!isThisMonth()) {
+      <tz-button variant="text" icon="today" (click)="go(thisMonth)">
+        {{ 'monthPage.thisMonth' | translate }}
+      </tz-button>
+    }
+    <mat-menu #monthMenu="matMenu">
+      @for (option of months(); track option.year * 100 + option.month) {
+        <button mat-menu-item type="button" (click)="go(option)">
+          <mat-icon aria-hidden="true">{{
+            option.year === month().year && option.month === month().month
+              ? 'check'
+              : 'calendar_today'
+          }}</mat-icon>
+          <span>{{ monthLabel(option) }}</span>
+        </button>
+      }
+    </mat-menu>
+  </div>
+
+  @if (failed()) {
+    <tz-load-error [message]="'common.loadError' | translate" (retry)="load()" />
+  } @else if (report(); as r) {
+    <section class="tiles">
+      <tz-money-tile
+        icon="receipt_long"
+        [value]="r.totals.charged"
+        [label]="'monthPage.charged' | translate"
+      />
+      <tz-money-tile
+        icon="payments"
+        tone="good"
+        [value]="r.totals.paid"
+        [label]="'monthPage.paid' | translate"
+      />
+      <tz-money-tile
+        icon="trending_down"
+        tone="warn"
+        [value]="r.totals.debt"
+        [label]="'monthPage.debt' | translate"
+      />
+      <tz-money-tile
+        icon="person_alert"
+        tone="warn"
+        [count]="true"
+        [value]="r.totals.debtors"
+        [label]="'monthPage.debtors' | translate"
+      />
+    </section>
+
+    <p class="facts">
+      <span>{{ 'monthPage.opening' | translate }}: <tz-amount [value]="r.totals.opening" /></span>
+      <span>{{ 'monthPage.credit' | translate }}: <tz-amount [value]="r.totals.credit" /></span>
+      <span>{{
+        'monthPage.patientsSeen' | translate: { count: (r.totals.patientsSeen | money) }
+      }}</span>
+    </p>
+
+    <tz-segmented-button
+      class="tabs"
+      [options]="tabs()"
+      [value]="activeTab()"
+      [ariaLabel]="'monthPage.tabs' | translate"
+      (valueChange)="selectTab($event)"
+    />
+
+    @switch (activeTab()) {
+      @case ('rows') {
+        @if (!r.rows.length) {
+          <tz-empty-state
+            icon="event_note"
+            [title]="'monthPage.emptyTitle' | translate"
+            [hint]="'monthPage.emptyHint' | translate"
+          />
+        } @else if (compact()) {
+          <ul class="cards">
+            @for (row of r.rows; track row.id) {
+              <li>
+                <a class="card" [routerLink]="['/patients', row.patientId]">
+                  <div class="card__top">
+                    <strong>{{ row.patientName }}</strong>
+                    <span class="card__date">{{ row.date | jday }}</span>
+                  </div>
+                  <div class="card__middle">
+                    <tz-category-chip [category]="row.category" />
+                    @if (row.doctorName) {
+                      <span class="muted">{{ row.doctorName }}</span>
+                    }
+                  </div>
+                  <div class="card__amounts">
+                    @if (row.kind === 'entry') {
+                      <span
+                        >{{ 'column.charged' | translate }} <tz-amount [value]="row.charged"
+                      /></span>
+                    } @else {
+                      <span class="paid"
+                        >{{ 'column.paid' | translate }} <tz-amount [value]="row.paid"
+                      /></span>
+                    }
+                    <span
+                      >{{ 'column.balance' | translate }}
+                      <tz-amount tone="balance" [value]="row.balanceAfter"
+                    /></span>
+                  </div>
+                  @if (row.kind === 'payment') {
+                    <div class="card__route muted">
+                      <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+                      {{ row.payerName ?? ('payment.patientPaid' | translate) }}
+                      @if (row.source) {
+                        · {{ row.source }}
+                      }
+                      ←
+                      {{ row.accountTitle ?? ('payment.noAccount' | translate) }}
+                    </div>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        } @else {
+          <tz-surface class="tz-surface--flush">
+            <div class="table-wrap">
+              <table class="sheet">
+                <thead>
+                  <tr>
+                    <th>{{ 'column.date' | translate }}</th>
+                    <th>{{ 'column.patient' | translate }}</th>
+                    <th>{{ 'column.category' | translate }}</th>
+                    <th>{{ 'column.doctor' | translate }}</th>
+                    <th class="num">{{ 'column.charged' | translate }}</th>
+                    <th class="num">{{ 'column.paid' | translate }}</th>
+                    <th>{{ 'column.route' | translate }}</th>
+                    <th class="num">{{ 'column.balance' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of r.rows; track row.id) {
+                    <tr [class.is-payment]="row.kind === 'payment'">
+                      <td class="nowrap">{{ row.date | jday }}</td>
+                      <td class="who">
+                        <a class="patient-link" [routerLink]="['/patients', row.patientId]">{{
+                          row.patientName
+                        }}</a>
+                        @if (row.description) {
+                          <small class="muted block">{{ row.description }}</small>
+                        }
+                      </td>
+                      <td><tz-category-chip [category]="row.category" /></td>
+                      <td class="muted nowrap">{{ row.doctorName ?? '—' }}</td>
+                      <td class="num"><tz-amount [value]="row.charged" [dashZero]="true" /></td>
+                      <td class="num paid"><tz-amount [value]="row.paid" [dashZero]="true" /></td>
+                      <td class="route">
+                        @if (row.kind === 'payment') {
+                          <span>{{ row.payerName ?? ('payment.patientPaid' | translate) }}</span>
+                          @if (row.source) {
+                            <small class="muted">({{ row.source }})</small>
+                          }
+                          <mat-icon aria-hidden="true">arrow_back</mat-icon>
+                          <span>{{ row.accountTitle ?? ('payment.noAccount' | translate) }}</span>
+                        }
+                      </td>
+                      <td class="num"><tz-amount tone="balance" [value]="row.balanceAfter" /></td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="4">
+                      {{ 'monthPage.rowsCount' | translate: { count: (r.rows.length | money) } }}
+                    </td>
+                    <td class="num"><tz-amount [value]="r.totals.charged" /></td>
+                    <td class="num paid"><tz-amount [value]="r.totals.paid" /></td>
+                    <td colspan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </tz-surface>
+        }
+      }
+
+      @case ('accounts') {
+        <div class="split">
+          <tz-surface [title]="'monthPage.tabAccounts' | translate" icon="account_balance">
+            @if (!r.byAccount.length) {
+              <p class="muted">{{ 'entry.noPayments' | translate }}</p>
+            }
+            <ul class="bars">
+              @for (a of r.byAccount; track a.accountId) {
+                <li>
+                  <div class="bars__head">
+                    <mat-icon aria-hidden="true">{{ accountKindIcon(a.kind) }}</mat-icon>
+                    <strong>{{ a.title ?? ('payment.noAccount' | translate) }}</strong>
+                    <span class="muted">× {{ a.count | money }}</span>
+                    <span class="spacer"></span>
+                    <tz-amount [value]="a.amount" />
+                  </div>
+                  <div class="bars__track" aria-hidden="true">
+                    <span [style.inline-size.%]="share(a.amount)"></span>
+                  </div>
+                  <small class="muted">{{ percent(share(a.amount)) }}</small>
+                </li>
+              }
+            </ul>
+          </tz-surface>
+
+          <tz-surface [title]="'monthPage.byCategory' | translate" icon="category">
+            <table class="mini">
+              <thead>
+                <tr>
+                  <th>{{ 'column.category' | translate }}</th>
+                  <th class="num">{{ 'column.charged' | translate }}</th>
+                  <th class="num">{{ 'column.paid' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of r.byCategory; track c.category) {
+                  <tr>
+                    <td><tz-category-chip [category]="c.category" /></td>
+                    <td class="num"><tz-amount [value]="c.charged" [dashZero]="true" /></td>
+                    <td class="num paid"><tz-amount [value]="c.paid" [dashZero]="true" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </tz-surface>
+        </div>
+      }
+
+      @case ('doctors') {
+        <tz-surface class="tz-surface--flush">
+          <div class="table-wrap">
+            <table class="sheet">
+              <thead>
+                <tr>
+                  <th>{{ 'column.doctor' | translate }}</th>
+                  <th class="num">{{ 'column.entries' | translate }}</th>
+                  <th class="num">{{ 'column.charged' | translate }}</th>
+                  <th class="num">{{ 'column.paid' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of r.byDoctor; track d.doctorId) {
+                  <tr>
+                    <td>
+                      <mat-icon class="inline-icon" aria-hidden="true">stethoscope</mat-icon>
+                      {{ d.name ?? ('entry.noDoctor' | translate) }}
+                    </td>
+                    <td class="num">{{ d.entries | money }}</td>
+                    <td class="num"><tz-amount [value]="d.charged" /></td>
+                    <td class="num paid"><tz-amount [value]="d.paid" /></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="muted">{{ 'monthPage.emptyTitle' | translate }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </tz-surface>
+      }
+
+      @case ('debtors') {
+        @if (!debtors().length) {
+          <tz-empty-state
+            icon="task_alt"
+            [title]="'monthPage.noDebtorsTitle' | translate"
+            [hint]="'monthPage.noDebtorsHint' | translate"
+          />
+        } @else {
+          <ul class="people">
+            @for (p of debtors(); track p.patientId; let i = $index) {
+              <li>
+                <a class="person" [routerLink]="['/patients', p.patientId]">
+                  <span class="person__rank">{{ i + 1 | money }}</span>
+                  <span class="person__name">
+                    <strong>{{ p.name }}</strong>
+                    <small class="muted">
+                      @if (p.phone) {
+                        <span class="ltr-nums">{{ p.phone }}</span> ·
+                      }
+                      {{ 'column.lastPayment' | translate }}: {{ p.lastPaymentOn | jday }}
+                    </small>
+                  </span>
+                  <tz-amount tone="balance" [value]="p.closing" />
+                </a>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      @case ('patients') {
+        <tz-surface class="tz-surface--flush">
+          <div class="table-wrap">
+            <table class="sheet">
+              <thead>
+                <tr>
+                  <th>{{ 'column.patient' | translate }}</th>
+                  <th class="num">{{ 'column.opening' | translate }}</th>
+                  <th class="num">{{ 'column.charged' | translate }}</th>
+                  <th class="num">{{ 'column.paid' | translate }}</th>
+                  <th class="num">{{ 'column.closing' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of r.patients; track p.patientId) {
+                  <tr>
+                    <td>
+                      <a class="patient-link" [routerLink]="['/patients', p.patientId]">{{
+                        p.name
+                      }}</a>
+                    </td>
+                    <td class="num"><tz-amount tone="balance" [value]="p.opening" /></td>
+                    <td class="num"><tz-amount [value]="p.charged" [dashZero]="true" /></td>
+                    <td class="num paid"><tz-amount [value]="p.paid" [dashZero]="true" /></td>
+                    <td class="num"><tz-amount tone="balance" [value]="p.closing" /></td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="muted">{{ 'monthPage.emptyTitle' | translate }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </tz-surface>
+      }
+    }
+  }
+</tz-page>

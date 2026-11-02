@@ -1,0 +1,242 @@
+/**
+ * Ledger layouts shared by the month sheet, the patient's account and the
+ * debtors list: tables of amounts, their phone-width card form, and person
+ * rows. Global on purpose — the same row must look the same on every screen.
+ */
+@use './surface';
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.block {
+  display: block;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.inline-icon {
+  font-size: var(--tz-icon-sm);
+  vertical-align: -3px;
+  margin-inline-end: 4px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.sheet,
+table.mini {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--mat-sys-body-medium);
+
+  th {
+    padding: 10px 12px;
+    text-align: start;
+    font: var(--mat-sys-label-large);
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 12px;
+    vertical-align: middle;
+  }
+
+  .num {
+    text-align: end;
+    white-space: nowrap;
+    font-feature-settings: var(--tz-font-numeric);
+  }
+
+  .paid {
+    color: var(--tz-on-success-container);
+  }
+}
+
+table.sheet {
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--tz-card);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
+    transition: background-color 120ms ease;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--mat-sys-primary) 5%, transparent);
+  }
+
+  tbody tr td:first-child {
+    border-inline-start: 3px solid transparent;
+  }
+
+  tbody tr.is-payment td:first-child {
+    border-inline-start-color: color-mix(in srgb, var(--tz-on-success-container) 55%, transparent);
+  }
+
+  .who {
+    min-inline-size: 140px;
+
+    .patient-link {
+      white-space: nowrap;
+    }
+  }
+
+  tfoot td {
+    font: var(--mat-sys-title-small);
+    border-top: 1px solid var(--mat-sys-outline-variant);
+    background: var(--tz-well);
+  }
+
+  .route {
+    white-space: nowrap;
+
+    mat-icon {
+      font-size: var(--tz-icon-xs);
+      vertical-align: -3px;
+      margin-inline: 4px;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    small {
+      margin-inline-start: 4px;
+    }
+  }
+}
+
+table.mini {
+  td,
+  th {
+    padding: 8px 4px;
+  }
+
+  tbody tr + tr td {
+    border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 55%, transparent);
+  }
+}
+
+.patient-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--mat-sys-primary);
+    text-decoration: underline;
+  }
+}
+
+/* Rows as cards, for phones. */
+ul.cards,
+ul.people {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  @include surface.outlined(medium);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--tz-space-3);
+  color: inherit;
+  text-decoration: none;
+
+  &__top,
+  &__middle,
+  &__amounts {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tz-space-2);
+    flex-wrap: wrap;
+  }
+
+  &__date {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__amounts {
+    font: var(--mat-sys-body-medium);
+
+    .paid {
+      color: var(--tz-on-success-container);
+    }
+  }
+
+  &__route {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: var(--mat-sys-body-small);
+
+    mat-icon {
+      font-size: var(--tz-icon-xs);
+    }
+  }
+}
+
+.person {
+  @include surface.outlined(medium);
+
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-3);
+  padding: var(--tz-space-3) var(--tz-space-4);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms var(--tz-ease-standard);
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &__rank {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 50%;
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+    font: var(--mat-sys-label-large);
+  }
+
+  &__name {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.5;
+
+    strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      font: var(--mat-sys-body-small);
+    }
+  }
+
+  tz-amount {
+    font: var(--mat-sys-title-medium);
+  }
+}

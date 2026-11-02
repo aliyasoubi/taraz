@@ -1,0 +1,394 @@
+@use '@angular/material' as mat;
+@use './styles/theme-colors' as theme;
+@use './styles/ledger';
+
+// Font faces are registered in angular.json's `styles` array rather than
+// imported here: their @font-face rules use paths relative to their own
+// file, which Sass would flatten and break. `fonts/vazirmatn.css` picks the
+// Farsi-Digits build of the family; see the note there.
+
+/**
+ * Material 3 theme for a Persian, right-to-left clinical app.
+ *
+ * One palette, "Slate": a low-chroma blue (seed #435E91, HCT 265°/36) with a
+ * dusty lavender tertiary (seed #655975, HCT 305°/20). Blue is the hue
+ * patients already read as clinical trust; the eased chroma is what keeps it
+ * calm rather than corporate on a screen that is open all day. The tonal
+ * ramps in `styles/_theme-colors.scss` come from
+ * `ng generate @angular/material:theme-color` with those two seeds — a
+ * generated ramp is capped by its seed's chroma, so no container tone can
+ * drift louder than the seed the way Material's prebuilt cyan did. Lavender
+ * sits 40° from the primary: distinguishable at a glance on a 10px dot, never
+ * louder than it, and clear of the red band `error` owns.
+ *
+ * `theme-type: color-scheme` emits both light and dark token sets and lets the
+ * OS choose, so no runtime theme switch is needed for the default case.
+ */
+html {
+  @include mat.theme(
+    (
+      color: (
+        primary: theme.$primary-palette,
+        tertiary: theme.$tertiary-palette,
+        theme-type: color-scheme,
+      ),
+      typography: (
+        plain-family: (
+          Vazirmatn,
+          'Segoe UI',
+          Tahoma,
+          sans-serif,
+        ),
+        brand-family: (
+          Vazirmatn,
+          'Segoe UI',
+          Tahoma,
+          sans-serif,
+        ),
+        bold-weight: 700,
+        medium-weight: 500,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+
+  color-scheme: light dark;
+  // App-level aliases keep layout and component roles consistent while M3
+  // remains the source of truth for colour, type and shape.
+  --tz-space-1: 4px;
+  --tz-space-2: 8px;
+  --tz-space-3: 12px;
+  --tz-space-4: 16px;
+  --tz-space-5: 24px;
+  --tz-space-6: 32px;
+  --tz-control-height: 48px;
+  --tz-search-height: 56px;
+  --tz-avatar-sm: 32px;
+  --tz-avatar-md: 40px;
+  --tz-avatar-lg: 56px;
+  // Icon sizes. `xs` sits beside body-small text, `sm` beside body-medium or
+  // inside a chip, `md` is Material's default, `lg`/`xl` are marks.
+  --tz-icon-xs: 16px;
+  --tz-icon-sm: 18px;
+  --tz-icon-md: 24px;
+  --tz-icon-lg: 32px;
+  --tz-icon-xl: 48px;
+  --tz-page-content: 1200px;
+  --tz-page-wide: 1500px;
+  --tz-page-form: 960px;
+  --tz-page-narrow: 640px;
+  --tz-page-inline: 24px;
+  --tz-page-inline-compact: 12px;
+  --tz-page-block-start: 20px;
+  --tz-page-block-end: 32px;
+  --tz-page-block-start-compact: 16px;
+  --tz-page-block-end-compact: 24px;
+  --tz-page-gap: 16px;
+  // Material's M3 color/type/shape scales ship as tokens here; motion does
+  // not, so these are hand-picked to match M3 Expressive's spatial-spring
+  // feel. Spring is for small, playful feedback (nav selection, button
+  // press) — a whole surface overshooting its own bounds reads as jittery,
+  // so dialogs/snackbars get the gentler M3 "emphasized decelerate" curve.
+  --tz-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tz-ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+  // M3 "standard": colour and size changes that stay inside their own box.
+  --tz-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  // Persian numerals are what staff read on paper charts; keep the app
+  // consistent with the ledgers it replaces. The digits themselves come from
+  // the Farsi-Digits build of Vazirmatn (`fonts/vazirmatn.css`), so every
+  // number on screen — counts, dates, phone numbers, file numbers, and
+  // whatever is typed into an input — renders as ۰-۹ while the underlying
+  // text stays ASCII.
+  font-variant-numeric: normal;
+  // Tabular Persian digits for ASCII text: 'ss01' maps 0-9 onto the ۰-۹
+  // glyphs, then 'tnum' makes them one width. Use this wherever numbers line
+  // up in a column or tick (counts, dates, clocks) — see `.ltr-nums` below for
+  // why, and never add 'onum', which is Latin in this font.
+  --tz-font-numeric: 'ss01', 'tnum';
+  -webkit-tap-highlight-color: transparent;
+
+  /*
+   * Categorical colours for the treatment catalogue. Deliberately not the M3
+   * accent containers: those carry status meaning here (error = alert,
+   * tertiary = warning, secondary = success) and an extraction must never
+   * look like an alarm. The set is calm and short — the chip label carries
+   * the identity, the tint only groups — and stays out of the red/orange
+   * band the error tokens live in. `light-dark()` follows the same
+   * `color-scheme` switch the M3 tokens use, so the settings toggle and the
+   * OS preference both apply.
+   */
+  --tz-cat-sky-bg: light-dark(#e1f0fa, #123b4f);
+  --tz-cat-sky-fg: light-dark(#0b4f6c, #a9d6ee);
+  --tz-cat-teal-bg: light-dark(#dcf3ef, #12403a);
+  --tz-cat-teal-fg: light-dark(#0f5c52, #9fdcd2);
+  --tz-cat-green-bg: light-dark(#e2f3e3, #1b3d22);
+  --tz-cat-green-fg: light-dark(#1f5f2c, #a9dcb1);
+  --tz-cat-indigo-bg: light-dark(#e6e9fb, #2a3060);
+  --tz-cat-indigo-fg: light-dark(#33408f, #bcc4f2);
+  --tz-cat-violet-bg: light-dark(#efe6f9, #3c2a5c);
+  --tz-cat-violet-fg: light-dark(#5a2e8f, #d3bff0);
+  --tz-cat-plum-bg: light-dark(#f6e6f0, #4a2a3d);
+  --tz-cat-plum-fg: light-dark(#7b2c5c, #ecbcd8);
+  --tz-cat-sand-bg: light-dark(#f5ecd9, #453619);
+  --tz-cat-sand-fg: light-dark(#6b4a12, #e6cf9b);
+  --tz-cat-slate-bg: light-dark(#e8ecef, #2e3a42);
+  --tz-cat-slate-fg: light-dark(#3d4a54, #c0ccd4);
+
+  /*
+   * Status colours with a fixed meaning. M3 has no success or warning role,
+   * and `secondary`/`tertiary` carry no meaning of their own — tertiary is
+   * the app's second categorical accent (female, created, unlinked), so
+   * "overdue" riding on it would look like a category. These hold a hue that
+   * says what they mean, and are a notch stronger than the categorical tints
+   * above so a status reads as a status. `error` stays M3's.
+   */
+  --tz-success-container: light-dark(#d6efdb, #1d3f27);
+  --tz-on-success-container: light-dark(#0e4a1f, #b4e5c0);
+  --tz-warning-container: light-dark(#fbe8c4, #4a3710);
+  --tz-on-warning-container: light-dark(#5a3c00, #f4d68b);
+
+  /*
+   * Card on canvas. The page ground is a tinted neutral, and a card sits on it
+   * a tone lighter, lifted by a soft shadow instead of outlined. M3's
+   * container ramp runs the other way in dark (`lowest` is the darkest), so
+   * each mode names its own tones; a card is lighter than the ground in both.
+   * Dark has no shadow to see, so there a hairline does the lifting. A well —
+   * a lab column, the filter panel — is recessed: a step darker than the
+   * canvas, holding cards.
+   */
+  --tz-canvas: light-dark(var(--mat-sys-surface-container-low), var(--mat-sys-surface));
+  --tz-card: light-dark(
+    var(--mat-sys-surface-container-lowest),
+    var(--mat-sys-surface-container-low)
+  );
+  --tz-card-border: light-dark(
+    transparent,
+    color-mix(in srgb, var(--mat-sys-outline-variant) 60%, transparent)
+  );
+  --tz-card-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.05);
+  --tz-well: light-dark(var(--mat-sys-surface-container), var(--mat-sys-surface-container-lowest));
+}
+
+/** Explicit dark/light override, used when the user picks one in settings. */
+html[data-theme='light'] {
+  @include mat.theme-overrides(
+    (
+      // Nothing to override — light is the base emitted above.
+    )
+  );
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Vazirmatn, 'Segoe UI', Tahoma, sans-serif;
+  background: var(--tz-canvas);
+  color: var(--mat-sys-on-surface);
+  overscroll-behavior-y: none;
+  // Persian text is more legible with slightly looser lines than Latin.
+  line-height: 1.7;
+}
+
+/* ── Material Symbols ──────────────────────────────────────────────── */
+.material-symbols-rounded {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  // Never let the ligature text flash before the font loads.
+  font-display: block;
+  user-select: none;
+}
+
+/**
+ * `<mat-icon>` ships a fixed 24px square with `overflow: hidden`. That clips
+ * the larger icons here (the 52px empty-state mark, the 32px brand) and pads
+ * out the smaller ones, so tie the box to the font size instead: every icon is
+ * then exactly as large as the type around it asks for. Element + class keeps
+ * this ahead of Material's own `.mat-icon`, and behind the per-component sizes
+ * that view encapsulation gives an extra class to.
+ */
+mat-icon.material-symbols-rounded {
+  inline-size: 1em;
+  block-size: 1em;
+  line-height: 1;
+  overflow: visible;
+}
+
+/** Filled variant marks the active item — the M3 selection idiom. */
+.material-symbols-rounded.is-filled {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 500,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* ── RTL corrections ───────────────────────────────────────────────── */
+/**
+ * Phone numbers, file numbers and national ids are ASCII digits inside an RTL
+ * paragraph. Without an explicit direction the bidi algorithm reorders the
+ * leading/trailing punctuation and 0912-345 renders as 345-0912.
+ *
+ * Farsi-Digits Vazirmatn draws each ASCII digit at its natural proportional
+ * width ('1' is narrow, '3' is wide), so a phone or file number shifts length
+ * digit-by-digit as it's typed. Its 'tnum' feature only covers the ۰-۹ code
+ * points, so for ASCII text we first map 0-9 onto those glyphs with 'ss01'
+ * (an earlier lookup, so the two chain) and then 'tnum' makes them tabular.
+ *
+ * Never enable 'onum' with this font: the FD build inherited the standard
+ * face's Latin old-style figures under that tag, so digits come out as a mix
+ * of Latin and Persian shapes.
+ */
+.ltr-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+  font-feature-settings: var(--tz-font-numeric);
+}
+
+/* ── Scrollbars ────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--mat-sys-outline-variant) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-extra-small);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Search suggestions ────────────────────────────────────────────── */
+/**
+ * The search bar's suggestion panel is an M3 search view: its rows are list
+ * items (headline plus supporting text), not menu options. The panel is
+ * rendered in the CDK overlay, outside any component's encapsulation, so the
+ * row height that suits two lines has to be set here.
+ */
+.tz-search-panel .mat-mdc-option {
+  min-height: 56px;
+  padding-block: 8px;
+}
+
+/* ── Loading ───────────────────────────────────────────────────────── */
+/**
+ * A page's indeterminate bar lies over the top edge of what follows it
+ * rather than taking a row of its own. In the flow it pushed the content down
+ * by its 4px plus the page gap on every refetch — every search keystroke —
+ * and let it jump back after. The patient list does the same inside its
+ * results box.
+ */
+tz-page > mat-progress-bar {
+  position: relative;
+  z-index: 1;
+  margin-block-end: calc(-4px - var(--tz-page-gap));
+}
+
+/* ── Snackbars ─────────────────────────────────────────────────────── */
+/**
+ * On a phone the bottom navigation holds the bottom 72px, and a snackbar
+ * there covered it for as long as the message was up. Material marks the
+ * snackbar's pane `mat-mdc-snack-bar-handset` on the same CDK Handset
+ * breakpoint the shell shows that bar at; the `:has` keeps the sign-in page,
+ * which has no bar, as it was.
+ */
+body:has(.bottom-nav) .mat-mdc-snack-bar-handset .mat-mdc-snack-bar-container {
+  margin-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* ── Motion ────────────────────────────────────────────────────────── */
+/**
+ * Material's dialog/snackbar entrances ship the plain M2 "standard decelerate"
+ * curve baked into their compiled CSS, with no token to override it through —
+ * so this reaches past the component boundary on purpose, scoped to exactly
+ * the two selectors that carry the entrance transform.
+ */
+.mat-mdc-dialog-surface {
+  transition-timing-function: var(--tz-ease-emphasized) !important;
+}
+
+.mat-snack-bar-container-animations-enabled.mat-snack-bar-container-enter {
+  animation-timing-function: var(--tz-ease-emphasized) !important;
+}
+
+/**
+ * How content arrives: a short fade and an 8px rise on the emphasized curve.
+ * `tz-page` plays it for every screen; `.tz-enter` / `.tz-leave` are for
+ * Angular's `animate.enter` / `animate.leave` on a block that comes and goes
+ * in place, like the patient list's filter panel. `backwards`, not `both`, so
+ * no transform is left behind once it has played.
+ */
+@keyframes tz-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes tz-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.tz-enter {
+  animation: tz-enter 220ms var(--tz-ease-emphasized) backwards;
+}
+
+.tz-leave {
+  animation: tz-leave 120ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

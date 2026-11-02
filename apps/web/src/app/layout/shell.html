@@ -1,0 +1,127 @@
+<mat-sidenav-container class="shell" [hasBackdrop]="!isDesktop()">
+  <!--
+    Desktop rail / tablet drawer; on a phone the bottom bar replaces it. The
+    sidenav stays mounted at every breakpoint and switches to `over` mode, so
+    the container never keeps a stale content margin.
+  -->
+  <mat-sidenav
+    class="shell__nav"
+    [mode]="isDesktop() ? 'side' : 'over'"
+    [opened]="isDesktop() || (drawerOpen() && !isHandset())"
+    [disableClose]="isDesktop()"
+    (closedStart)="closeDrawer()"
+    position="start"
+  >
+    <div class="nav">
+      <a class="nav__brand" routerLink="/month" (click)="closeDrawer()">
+        <tz-logo [size]="32" />
+        <span class="nav__brand-text">
+          <strong>{{ 'app.title' | translate }}</strong>
+          <small>{{ 'app.subtitle' | translate }}</small>
+        </span>
+      </a>
+
+      <div class="nav__cta">
+        <tz-button icon="add" link="/entries/new" [fullWidth]="true" (click)="closeDrawer()">
+          {{ 'app.newEntry' | translate }}
+        </tz-button>
+      </div>
+
+      <nav class="nav__links" [attr.aria-label]="'app.mainSections' | translate">
+        @for (item of nav; track item.path) {
+          <a
+            class="nav__link"
+            [routerLink]="item.path"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            #rla="routerLinkActive"
+            (click)="closeDrawer()"
+          >
+            <mat-icon class="nav__icon" [class.is-filled]="rla.isActive" aria-hidden="true">{{
+              item.icon
+            }}</mat-icon>
+            <span class="nav__label">{{ item.label | translate }}</span>
+          </a>
+        }
+      </nav>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell__content">
+    <mat-toolbar class="topbar">
+      @if (!isDesktop() && !isHandset()) {
+        <tz-icon-button
+          icon="menu"
+          (click)="toggleDrawer()"
+          [ariaLabel]="'app.openMenu' | translate"
+        />
+      }
+      @if (!isDesktop()) {
+        <a class="topbar__brand" routerLink="/month">
+          <tz-logo [size]="28" />
+          <strong>{{ 'app.title' | translate }}</strong>
+        </a>
+      }
+
+      <span class="spacer"></span>
+
+      @if (!isDesktop()) {
+        <tz-button icon="add" link="/entries/new" [collapseBelow]="420">
+          {{ 'app.newEntry' | translate }}
+        </tz-button>
+      }
+
+      <tz-icon-button
+        class="topbar__avatar-btn"
+        [menu]="userMenu"
+        [ariaLabel]="'app.userAccount' | translate"
+      >
+        <tz-avatar size="small" tone="primary" [name]="auth.user()?.fullName ?? ''" />
+      </tz-icon-button>
+
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <div class="user-menu__header">
+          <tz-avatar size="medium" tone="primary" [name]="auth.user()?.fullName ?? ''" />
+          <span class="user-menu__identity">
+            <strong>{{ auth.user()?.fullName }}</strong>
+            <small class="ltr-nums">{{ auth.user()?.username }}</small>
+          </span>
+        </div>
+        <a mat-menu-item routerLink="/settings">
+          <mat-icon aria-hidden="true">settings</mat-icon>
+          <span>{{ 'nav.settings' | translate }}</span>
+        </a>
+        <button mat-menu-item type="button" (click)="logout()">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          <span>{{ 'app.logout' | translate }}</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main #page class="page" [class.page--with-bottom-nav]="isHandset()">
+      <router-outlet />
+    </main>
+
+    <!-- Phone: bottom navigation, thumb-reachable. -->
+    @if (isHandset()) {
+      <nav class="bottom-nav" [attr.aria-label]="'app.mainSections' | translate">
+        @for (item of nav; track item.path) {
+          <a
+            class="bottom-nav__item"
+            [routerLink]="item.path"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            #rla="routerLinkActive"
+          >
+            <span class="bottom-nav__pill">
+              <mat-icon [class.is-filled]="rla.isActive" aria-hidden="true">{{
+                item.icon
+              }}</mat-icon>
+            </span>
+            <span class="bottom-nav__label">{{ item.label | translate }}</span>
+          </a>
+        }
+      </nav>
+    }
+  </mat-sidenav-content>
+</mat-sidenav-container>

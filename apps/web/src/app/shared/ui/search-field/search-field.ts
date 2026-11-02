@@ -1,0 +1,294 @@
+import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ReactiveFormsModule, type FormControl } from '@angular/forms';
+import {
+  MatAutocompleteModule,
+  type MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslatePipe } from '@ngx-translate/core';
+
+export interface SearchFieldOption {
+  value: string;
+  label: string;
+  /** Usually a file/register number. */
+  meta?: string | null;
+  /** Usually a phone number or short secondary identifier. */
+  supporting?: string | null;
+  /** A few words of text — unlike `meta`/`supporting`, not laid out as a number. */
+  tag?: string | null;
+  icon?: string;
+}
+
+/**
+ * One Material 3 search bar for app bars and data lists.
+ *
+ * M3's search bar is a 56dp pill on `surface-container-high` with a leading
+ * search icon and a trailing clear; it has no focus outline — the container
+ * stays put and the caret and suggestion panel are what signal focus. A ring
+ * here would make it read as an outlined text field, which is the one thing
+ * next to it in every list toolbar.
+ */
+@Component({
+  selector: 'tz-search-field',
+  standalone: true,
+  imports: [
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    TranslatePipe,
+  ],
+  template: `
+    <div class="tz-search-field">
+      <mat-icon class="tz-search-field__leading" aria-hidden="true">search</mat-icon>
+      <input
+        #searchInput
+        class="tz-search-field__input"
+        type="search"
+        [formControl]="control()"
+        [matAutocomplete]="autocomplete"
+        [placeholder]="placeholder()"
+        [attr.aria-label]="ariaLabel() || placeholder()"
+        autocomplete="off"
+        enterkeyhint="search"
+      />
+
+      @if (loading()) {
+        <mat-spinner
+          class="tz-search-field__spinner"
+          [diameter]="20"
+          [attr.aria-label]="'common.searching' | translate"
+        />
+      } @else if (control().value) {
+        <button
+          class="tz-search-field__clear"
+          mat-icon-button
+          type="button"
+          (click)="clear()"
+          [attr.aria-label]="'action.clearSearch' | translate"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <mat-autocomplete
+      #autocomplete="matAutocomplete"
+      panelClass="tz-search-panel"
+      (optionSelected)="selectOption($event)"
+    >
+      <!-- Options sit directly under the autocomplete, never inside a
+           template outlet: its keyboard handling finds them by query. Only
+           their body is shared. -->
+      @if (heading(); as heading) {
+        <mat-optgroup [label]="heading">
+          @for (option of options(); track option.value) {
+            <mat-option [value]="option.value">
+              <ng-container
+                [ngTemplateOutlet]="optionBody"
+                [ngTemplateOutletContext]="{ $implicit: option }"
+              />
+            </mat-option>
+          }
+        </mat-optgroup>
+      } @else {
+        @for (option of options(); track option.value) {
+          <mat-option [value]="option.value">
+            <ng-container
+              [ngTemplateOutlet]="optionBody"
+              [ngTemplateOutletContext]="{ $implicit: option }"
+            />
+          </mat-option>
+        }
+      }
+      @if (showEmpty() && options().length === 0 && !loading()) {
+        <mat-option disabled>{{ emptyMessage() }}</mat-option>
+      }
+    </mat-autocomplete>
+
+    <ng-template #optionBody let-option>
+      <div class="tz-search-option">
+        <mat-icon class="tz-search-option__icon" aria-hidden="true">
+          {{ option.icon || 'person' }}
+        </mat-icon>
+        <span class="tz-search-option__body">
+          <span class="tz-search-option__label">{{ option.label }}</span>
+          @if (option.meta || option.supporting || option.tag) {
+            <span class="tz-search-option__meta">
+              @if (option.meta) {
+                <span class="ltr-nums">{{ option.meta }}</span>
+              }
+              @if (option.meta && option.supporting) {
+                <span aria-hidden="true">·</span>
+              }
+              @if (option.supporting) {
+                <span class="ltr-nums">{{ option.supporting }}</span>
+              }
+              @if (option.tag) {
+                <span class="tz-search-option__tag">{{ option.tag }}</span>
+              }
+            </span>
+          }
+        </span>
+      </div>
+    </ng-template>
+  `,
+  styles: `
+    :host {
+      display: block;
+      min-width: 0;
+    }
+
+    .tz-search-field {
+      display: flex;
+      align-items: center;
+      /* M3 spec: 16dp edge → leading icon, 16dp icon → text, 16dp text/trailing icon → edge. */
+      gap: var(--tz-space-4);
+      width: 100%;
+      height: var(--tz-search-height);
+      padding-inline: var(--tz-space-4);
+      border-radius: var(--mat-sys-corner-full);
+      background: var(--mat-sys-surface-container-high);
+      color: var(--mat-sys-on-surface);
+      transition: background-color 140ms ease;
+
+      /* M3 state layer: on-surface at 8% over the container, no outline. */
+      &:hover,
+      &:focus-within {
+        background: color-mix(
+          in srgb,
+          var(--mat-sys-on-surface) 8%,
+          var(--mat-sys-surface-container-high)
+        );
+      }
+
+      &:has(input:disabled) {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+    }
+
+    .tz-search-field__leading {
+      flex: 0 0 auto;
+      font-size: var(--tz-icon-md);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .tz-search-field__input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: inherit;
+      caret-color: var(--mat-sys-primary);
+      font: var(--mat-sys-body-large);
+      font-family: inherit;
+
+      &::placeholder {
+        color: var(--mat-sys-on-surface-variant);
+        opacity: 1;
+      }
+
+      &::-webkit-search-cancel-button {
+        display: none;
+      }
+    }
+
+    /* The 40px icon button insets its 24px glyph by 8px; pull it back so the
+       glyph (not the state layer) sits 16px from the edge like the leading icon. */
+    .tz-search-field__clear {
+      flex: 0 0 auto;
+      margin-inline: calc(-1 * var(--tz-space-2));
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    /* 20px spinner centred where the 24px trailing icon would be. */
+    .tz-search-field__spinner {
+      flex: 0 0 auto;
+      margin-inline: 0 2px;
+    }
+
+    .tz-search-option {
+      display: flex;
+      align-items: center;
+      gap: var(--tz-space-3);
+      width: 100%;
+      min-width: 0;
+    }
+
+    .tz-search-option__icon {
+      flex: 0 0 auto;
+      font-size: var(--tz-icon-md);
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .tz-search-option__body {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      line-height: 1.4;
+    }
+
+    .tz-search-option__label {
+      overflow: hidden;
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tz-search-option__meta {
+      display: inline-flex;
+      gap: var(--tz-space-2);
+      color: var(--mat-sys-on-surface-variant);
+      font: var(--mat-sys-body-small);
+    }
+
+    .tz-search-option__tag {
+      color: var(--mat-sys-primary);
+      font-weight: 500;
+    }
+  `,
+})
+export class TzSearchField {
+  readonly control = input.required<FormControl<string>>();
+  readonly placeholder = input('');
+  readonly ariaLabel = input('');
+  readonly loading = input(false);
+  readonly options = input<readonly SearchFieldOption[]>([]);
+  readonly showEmpty = input(false);
+  readonly emptyMessage = input('');
+  /** Labels the options as a group, e.g. what an empty field is offering. */
+  readonly heading = input<string | null>(null);
+  readonly optionSelected = output<string>();
+
+  private readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  focus(): void {
+    this.inputElement()?.nativeElement.focus();
+  }
+
+  clearAndBlur(): void {
+    this.clear();
+    this.inputElement()?.nativeElement.blur();
+  }
+
+  isFocused(): boolean {
+    return document.activeElement === this.inputElement()?.nativeElement;
+  }
+
+  protected clear(): void {
+    this.control().setValue('');
+    this.inputElement()?.nativeElement.focus();
+  }
+
+  protected selectOption(event: MatAutocompleteSelectedEvent): void {
+    this.optionSelected.emit(String(event.option.value));
+  }
+}

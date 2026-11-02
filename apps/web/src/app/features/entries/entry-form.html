@@ -1,0 +1,206 @@
+<tz-page width="form">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <tz-page-header
+    [title]="(editing() ? 'entry.editTitle' : 'entry.newTitle') | translate"
+    [subtitle]="editing() ? null : ('entry.newSubtitle' | translate)"
+    [backLabel]="'entry.cancel' | translate"
+    (back)="cancel()"
+  />
+
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <!-- 1. The patient -->
+    <tz-surface [title]="'entry.patientSection' | translate" icon="person">
+      @if (chosen(); as p) {
+        <div class="chosen">
+          <span class="chosen__avatar" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+          <span class="chosen__text">
+            <strong>{{ p.name }}</strong>
+            <small>
+              {{ balanceLabel(p.balance) | translate }}
+              @if (p.balance !== 0) {
+                · <tz-amount tone="balance" [value]="p.balance" />
+              }
+            </small>
+          </span>
+          @if (!editing()) {
+            <tz-button variant="text" icon="swap_horiz" (click)="changePatient()">
+              {{ 'entry.changePatient' | translate }}
+            </tz-button>
+          }
+        </div>
+      } @else {
+        <tz-text-field
+          [control]="form.controls.patientName"
+          [label]="'entry.patient' | translate"
+          [hint]="'entry.patientHint' | translate"
+          [options]="patientOptions()"
+          prefixIcon="person_search"
+          (optionSelected)="onPatientPicked($event)"
+        />
+        @if (newPatientName()) {
+          <div class="new-patient">
+            <p class="new-patient__label">
+              <mat-icon aria-hidden="true">person_add</mat-icon>
+              {{ 'entry.newPatient' | translate: { name: newPatientName() } }}
+            </p>
+            <tz-text-field
+              [control]="form.controls.patientPhone"
+              [label]="'entry.newPatientPhone' | translate"
+              prefixIcon="call"
+              type="tel"
+              inputmode="tel"
+              [ltr]="true"
+            />
+          </div>
+        }
+      }
+    </tz-surface>
+
+    <!-- 2. What the cost was for -->
+    <tz-surface [title]="'entry.costSection' | translate" icon="receipt_long">
+      <fieldset class="picker">
+        <legend>{{ 'entry.category' | translate }}</legend>
+        @for (group of groups; track group.value) {
+          <div class="picker__group">
+            <span class="picker__group-label">{{ group.label | translate }}</span>
+            <div class="picker__options">
+              @for (c of inGroup(group.value); track c.value) {
+                <button
+                  type="button"
+                  class="choice"
+                  [class.is-selected]="category() === c.value"
+                  [attr.aria-pressed]="category() === c.value"
+                  [style.--choice-bg]="'var(--tz-cat-' + c.tint + '-bg)'"
+                  [style.--choice-fg]="'var(--tz-cat-' + c.tint + '-fg)'"
+                  (click)="setCategory(c.value)"
+                >
+                  <mat-icon aria-hidden="true">{{ c.icon }}</mat-icon>
+                  <span>{{ c.label | translate }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </fieldset>
+
+      <fieldset class="picker">
+        <legend>{{ 'entry.doctor' | translate }}</legend>
+        <div class="picker__options">
+          @for (d of activeDoctors(); track d.id) {
+            <button
+              type="button"
+              class="choice choice--doctor"
+              [class.is-selected]="form.controls.doctorId.value === d.id"
+              [attr.aria-pressed]="form.controls.doctorId.value === d.id"
+              (click)="setDoctor(d.id)"
+            >
+              <mat-icon aria-hidden="true">stethoscope</mat-icon>
+              <span>{{ d.name }}</span>
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <tz-field-grid>
+        <tz-date-field [control]="form.controls.date" [label]="'entry.date' | translate" />
+        @if (!isDeposit()) {
+          <tz-money-field [control]="form.controls.amount" [label]="'entry.amount' | translate" />
+        }
+        <tz-text-field
+          class="tz-field-grid__full"
+          [control]="form.controls.description"
+          [label]="'entry.description' | translate"
+          [hint]="'entry.descriptionHint' | translate"
+          [maxlength]="300"
+        />
+      </tz-field-grid>
+
+      @if (isDeposit()) {
+        <tz-banner size="compact" icon="savings">{{ 'entry.depositNote' | translate }}</tz-banner>
+      }
+    </tz-surface>
+
+    <!-- 3. What was paid, there and then -->
+    @if (!editing()) {
+      <tz-surface
+        [title]="'entry.paymentsSection' | translate"
+        icon="payments"
+        [description]="'entry.paymentsHint' | translate"
+      >
+        <div class="payments">
+          @if (depositsOffer() > 0) {
+            <tz-banner class="deposits" size="compact" icon="savings" role="note">
+              {{
+                (useDeposits() ? 'entry.depositsOn' : 'entry.depositsOff')
+                  | translate: { amount: (depositsOffer() | money) }
+              }}
+              <tz-button tzBannerAction variant="text" (click)="useDeposits.set(!useDeposits())">
+                {{ (useDeposits() ? 'entry.depositsSkip' : 'entry.depositsUse') | translate }}
+              </tz-button>
+            </tz-banner>
+          }
+          @for (group of form.controls.payments.controls; track group; let i = $index) {
+            <div class="payment-card">
+              <div class="payment-card__head">
+                <strong>{{ 'entry.payment' | translate: { n: i + 1 } }}</strong>
+                <tz-icon-button
+                  icon="close"
+                  size="compact"
+                  [ariaLabel]="'entry.removePayment' | translate"
+                  (click)="removePayment(i)"
+                />
+              </div>
+              <tz-payment-fields [form]="group" [accounts]="accounts()" />
+            </div>
+          }
+          <tz-button variant="stroked" icon="add_card" (click)="addPayment()">
+            {{ 'entry.addPayment' | translate }}
+          </tz-button>
+        </div>
+      </tz-surface>
+    }
+
+    <!-- Totals, always in view while the form is long -->
+    <tz-form-actions class="actions">
+      <div class="totals">
+        @if (!isDeposit()) {
+          <span>{{ 'column.charged' | translate }} <tz-amount [value]="cost()" /></span>
+        }
+        @if (!editing()) {
+          <span class="paid"
+            >{{ 'column.paid' | translate }} <tz-amount [value]="paidNow()"
+          /></span>
+        }
+        @if (depositsApplied() > 0) {
+          <span class="paid"
+            >{{ 'entry.depositsTotal' | translate }} <tz-amount [value]="depositsApplied()"
+          /></span>
+        }
+        <span class="after">
+          {{ 'entry.afterSave' | translate }}
+          <tz-amount tone="balance" [value]="balanceAfter()" />
+          <small>{{ balanceLabel(balanceAfter()) | translate }}</small>
+        </span>
+      </div>
+      <span class="spacer"></span>
+      <tz-button variant="text" (click)="cancel()">{{ 'entry.cancel' | translate }}</tz-button>
+      <tz-button
+        type="submit"
+        icon="check"
+        [loading]="busy()"
+        [loadingText]="'entry.saving' | translate"
+      >
+        {{ 'entry.save' | translate }}
+      </tz-button>
+    </tz-form-actions>
+
+    @if (overpaid() && !editing()) {
+      <tz-banner size="compact" tone="warning" icon="info">{{
+        'entry.overpaid' | translate
+      }}</tz-banner>
+    }
+  </form>
+</tz-page>
