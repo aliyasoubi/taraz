@@ -1,0 +1,218 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-page-gap);
+}
+
+.chosen {
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-3);
+
+  &__avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: 50%;
+    background: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+    font: var(--mat-sys-title-medium);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.5;
+
+    strong {
+      font: var(--mat-sys-title-medium);
+    }
+
+    small {
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+}
+
+.new-patient {
+  margin-top: var(--tz-space-2);
+  padding: var(--tz-space-3);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--tz-well);
+
+  &__label {
+    display: flex;
+    align-items: center;
+    gap: var(--tz-space-2);
+    margin: 0 0 var(--tz-space-2);
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-primary);
+
+    mat-icon {
+      font-size: var(--tz-icon-sm);
+    }
+  }
+}
+
+.picker {
+  margin: 0 0 var(--tz-space-4);
+  padding: 0;
+  border: 0;
+
+  legend {
+    margin-bottom: var(--tz-space-2);
+    padding: 0;
+    font: var(--mat-sys-title-small);
+  }
+
+  &__group {
+    display: flex;
+    align-items: center;
+    gap: var(--tz-space-3);
+    flex-wrap: wrap;
+    padding: var(--tz-space-1) 0;
+  }
+
+  &__group-label {
+    min-inline-size: 110px;
+    font: var(--mat-sys-label-large);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tz-space-2);
+  }
+}
+
+.choice {
+  --choice-bg: var(--mat-sys-secondary-container);
+  --choice-fg: var(--mat-sys-on-secondary-container);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 40px;
+  padding: 0 var(--tz-space-4) 0 var(--tz-space-3);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-small);
+  background: transparent;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 150ms var(--tz-ease-standard),
+    border-color 150ms var(--tz-ease-standard),
+    transform 200ms var(--tz-ease-spring);
+
+  mat-icon {
+    font-size: var(--tz-icon-sm);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &.is-selected {
+    border-color: transparent;
+    background: var(--choice-bg);
+    color: var(--choice-fg);
+
+    mat-icon {
+      color: inherit;
+      font-variation-settings: 'FILL' 1;
+    }
+  }
+
+  &--doctor {
+    --choice-bg: var(--mat-sys-primary-container);
+    --choice-fg: var(--mat-sys-on-primary-container);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.payments {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--tz-space-3);
+}
+
+.deposits {
+  align-self: stretch;
+}
+
+.payment-card {
+  align-self: stretch;
+  padding: var(--tz-space-3);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--tz-well);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--tz-space-2);
+  }
+}
+
+.totals {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--tz-space-1) var(--tz-space-4);
+  font: var(--mat-sys-body-medium);
+
+  .paid {
+    color: var(--tz-on-success-container);
+  }
+
+  .after {
+    font-weight: 600;
+
+    small {
+      margin-inline-start: 4px;
+      font: var(--mat-sys-label-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+}
+
+/* The totals ride with the buttons, on a solid card so nothing reads through. */
+tz-form-actions.actions {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tz-space-2) var(--tz-space-3);
+  padding: var(--tz-space-3) var(--tz-space-4);
+  border: 1px solid var(--tz-card-border);
+  border-radius: var(--mat-sys-corner-large);
+  background: var(--tz-card);
+  box-shadow: 0 -2px 16px rgb(16 24 40 / 0.1);
+
+  @media (max-width: 600px) {
+    .totals {
+      flex: 1 1 100%;
+      justify-content: space-between;
+    }
+
+    .spacer {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,285 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shell {
+  height: 100%;
+  // The page ground is the canvas; cards sit on it a tone lighter (see
+  // styles/_surface.scss). The rail, top bar and bottom bar are the card
+  // tone, so the canvas reads as the work area they frame.
+  background: var(--tz-canvas);
+
+  &__nav {
+    width: 264px;
+    border-inline-end: 1px solid var(--mat-sys-outline-variant);
+    background: var(--tz-card);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    // The container handles scrolling; the page below owns its own overflow.
+    overflow: hidden;
+  }
+}
+
+/* ── Side navigation ───────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--tz-space-3);
+  gap: var(--tz-space-1);
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--tz-space-3);
+    padding: var(--tz-space-3) var(--tz-space-3) var(--tz-space-4);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  &__brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+
+    strong {
+      font: var(--mat-sys-title-medium);
+      font-weight: 700;
+      color: var(--mat-sys-on-surface);
+    }
+
+    small {
+      font: var(--mat-sys-body-small);
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: var(--tz-space-4);
+    padding: var(--tz-space-3) var(--tz-space-4);
+    border-radius: var(--mat-sys-corner-full);
+    text-decoration: none;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-large);
+    letter-spacing: var(--mat-sys-label-large-tracking);
+    transition:
+      background-color 180ms var(--tz-ease-standard),
+      color 180ms var(--tz-ease-standard);
+
+    &:hover {
+      background: color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent);
+      color: var(--mat-sys-on-surface);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+    }
+
+    &.is-active {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+  }
+
+  &__icon {
+    font-size: var(--tz-icon-md);
+    transition: transform 200ms var(--tz-ease-spring);
+  }
+
+  &__link.is-active &__icon {
+    transform: scale(1.1);
+  }
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-2);
+  // Sized by content, not a fixed 64px: the 56px search pill then gets an equal
+  // 8px above and below regardless of the 1px border (a fixed border-box height
+  // left it 3.5px on top and 4.5px underneath).
+  height: auto;
+  padding: var(--tz-space-2) var(--tz-space-3);
+  background: var(--tz-card);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  // Sits above the page; the shadow only appears once content scrolls under it.
+  box-shadow: none;
+
+  &__logo {
+    margin-inline-end: var(--tz-space-1);
+  }
+
+  &__search {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 560px;
+  }
+
+  // The icon button assumes a 24px glyph and pads to it, so the 32px avatar
+  // overflowed its content box and sat off-centre inside the state layer.
+  // Size the slot to the avatar and give the hover ring an 8px band around it.
+  &__avatar-btn {
+    --mat-icon-button-icon-size: var(--tz-avatar-sm);
+    --mat-icon-button-state-layer-size: var(--tz-control-height);
+  }
+}
+
+.topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tz-space-2);
+  color: inherit;
+  text-decoration: none;
+
+  strong {
+    font: var(--mat-sys-title-medium);
+  }
+}
+
+.nav__cta {
+  padding: 0 var(--tz-space-3) var(--tz-space-3);
+}
+
+.user-menu__header {
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-3);
+  min-width: 240px;
+  padding: var(--tz-space-3) var(--tz-space-4);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  line-height: 1.4;
+
+  strong {
+    font: var(--mat-sys-title-medium);
+  }
+
+  small {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.user-menu__identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Page area ─────────────────────────────────────────────────────── */
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+
+  &--with-bottom-nav {
+    // Clear the bottom bar plus the home indicator on notched phones.
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Bottom navigation (phones) ────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  background: var(--tz-card);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--tz-space-1);
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration: none;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-label-small);
+    letter-spacing: var(--mat-sys-label-small-tracking);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--mat-sys-primary);
+      outline-offset: 2px;
+      border-radius: var(--mat-sys-corner-medium);
+    }
+
+    &.is-active {
+      color: var(--mat-sys-on-secondary-container);
+
+      .bottom-nav__pill {
+        background: var(--mat-sys-secondary-container);
+      }
+
+      .bottom-nav__label {
+        font-weight: 700;
+      }
+    }
+  }
+
+  /** The M3 "active indicator" — a pill that grows behind the selected icon. */
+  &__pill {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 30px;
+    border-radius: var(--mat-sys-corner-full);
+    transform: scale(0.85);
+    transition:
+      background-color 200ms var(--tz-ease-standard),
+      transform 250ms var(--tz-ease-spring);
+
+    .material-symbols-rounded {
+      font-size: var(--tz-icon-md);
+    }
+  }
+
+  &__item.is-active &__pill {
+    transform: scale(1);
+  }
+
+  &__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* The section on screen, inside «more»: M3's selected menu item. */
+.more-menu__item.is-active {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+
+  mat-icon {
+    color: inherit;
+  }
+}

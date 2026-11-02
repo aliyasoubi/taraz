@@ -1,0 +1,11 @@
+{
+  "name": "تراز — حساب مالی بیماران",
+  "short_name": "تراز",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9f9ff",
+  "theme_color": "#435e91",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

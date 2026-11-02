@@ -1,78 +1,68 @@
 # CLAUDE.md
 
-Short list of things that go wrong if you don't know them. The README explains
-the product; ops/README.md the deployment.
+The short list of things that go wrong if you don't know them. The README
+explains the product.
 
 ## Real patient data — read first
 
-The old spreadsheet and any database here hold a real practice's patient names
-and money.
+The practice's workbook and the `taraz` database hold real patient names and money.
 
 - Never paste patient rows into commits, issues, PRs, logs or external services.
-- `*.xlsx`, `*.db`, `backend/data/` and `.env` files are gitignored; keep them that way.
-- Tests and demos use fake names only (`python -m app.cli seed-demo` fills an empty DB).
+- `*.xlsx`, `*.numbers`, `data/` and `.env` are gitignored; keep them that way.
+- Tests, demos and screenshots use fake names only (`npm run seed:demo` on `taraz_demo`).
+
+## Databases
+
+Postgres 17 via Homebrew, role `dental`. **Pass `DB_NAME` explicitly** for
+anything that writes; `.env` points at the real one.
+
+| Database     | Holds                                                        |
+| ------------ | ------------------------------------------------------------ |
+| `taraz`      | Real records                                                 |
+| `taraz_demo` | Fake patients; the `api-demo` launch config uses it          |
+| `taraz_e2e`  | Throwaway; `test:e2e` truncates it and skips any other name  |
 
 ## Language
 
 Code, comments, tests, commits and docs are English. Every user-facing string
 lives in a locale file:
 
-- `frontend/src/locales/fa.json` — UI text, used as `t('section.key', { vars })`
-  from `src/shared/lib/i18n.ts` (keys are type-checked). Enum labels come from
-  `src/shared/lib/labels.ts`, which reads the same file.
-- `backend/app/core/i18n/fa.json` — Excel export labels, the words the importer
-  matches, demo data; used as `t("export.sheets.summary")` from `app.core.i18n`.
+- `apps/web/public/i18n/fa.json` — the UI, via `| translate`. `npm run i18n:check`
+  rejects Persian letters in `.ts`/`.html` and arrays in the dictionary.
+- `apps/api/src/i18n/fa.json` — Excel export labels, the words the importer
+  matches in the sheet, seed and demo data (`text` from `src/i18n`).
 
-API errors are English codes (services `raise NotFoundError("patient_not_found")`)
-with a matching `errors.<code>` entry in the frontend locale file.
-`./scripts/check-no-persian.sh` (CI) rejects Persian anywhere else. Where
-Persian characters are data, not text (folding tables, test fixtures), write
-them as `\uXXXX` escapes.
-
-## Architecture rules
-
-- Backend layers: `api/` (HTTP) → `services/` (rules + queries) → `models`, `core/`, `utils/`.
-  Routes stay thin; services never import FastAPI and raise `core.errors`
-  (`NotFoundError`, `ConflictError`, `InvalidError`), mapped in `api/errors.py`.
-- Frontend is feature-sliced: `features/<domain>/{api.ts, *Page.tsx, components/}`,
-  generic code in `shared/{api,lib,ui}`. `shared/` never imports from `features/`.
-  Inside `shared/ui`, import sibling files directly; elsewhere use `@/shared/ui`.
-- Keep logic out of components: pure functions in a `.ts` file with a test
-  (see `patients/ledger.ts`, `transactions/form/model.ts`).
-- Formatting is enforced: `ruff format` (backend), `prettier` (frontend).
+API errors leave as codes (`InvalidInputError('patient_required')`, validation
+→ `fieldErrors`); the web app owns the wording under `errors.<code>`.
 
 ## Ledger rules
 
-- Amounts are integer **rials**. Toman is display-only (`frontend/src/shared/lib/format.ts`).
-- Balances are never stored. `backend/app/services/ledger.py` is the single
-  definition (`signed_amount`, `counts_as_paid`, `effective_on`); reports and
-  lists build on it. Don't recompute balances ad hoc elsewhere.
-- A cheque payment counts only when `cheque_status == cleared`, and lands on its
-  due date. Pending/bounced cheques never reduce a balance.
-- Dates are stored Gregorian; everything shown is Jalali. Month boundaries come
-  from `JMonth` (backend) / `shared/lib/jalali.ts` (frontend).
+- Amounts are integer **rials** (`bigint`, read back through `bigintToNumber`).
+- A patient's balance = Σ entry costs − Σ payments. Never stored. The SQL
+  definition is `BALANCES_CTE` (patients.service); the month report rebuilds it
+  in `buildMonthReport`, a pure function with its tests — change both together.
+- Payments always belong to an entry. A deposit is an entry with cost 0;
+  applying it (`ledger/deposits.ts`) moves its payments onto the treatment, so
+  a payment can be dated before its entry.
+- Dates are stored as Gregorian `date` (`yyyy-MM-dd`, kept as strings — see the
+  `pg` type parser in `data-source.ts`); everything shown is Jalali. Month
+  boundaries come from `common/jalali.ts` (API) and `shared/lib/jalali.ts` (web).
 
 ## Schema changes
 
-Edit `app/models.py`, then from `backend/`:
+Add a migration under `apps/api/src/database/migrations/` (hand-written SQL,
+`synchronize` is off). New columns are nullable or have a default.
 
-```bash
-.venv/bin/alembic revision --autogenerate -m "what changed"
-```
+## Frontend
 
-Tests run the real migrations, so a model change without a migration fails CI.
+- Compose the `tz-*` primitives in `apps/web/src/app/shared/ui` (taken from
+  patient-book's `pb-*`); colours only through the M3 / `--tz-*` tokens in
+  `styles.scss`, so both themes hold. Ledger tables share `styles/_ledger.scss`.
+- RTL everywhere: logical properties (`inline-start`, `margin-inline`), not left/right.
+- A new Material Symbol needs `npm run icons:build --workspace=web` (fonttools).
 
 ## Before you push
 
 ```bash
-./scripts/check-no-persian.sh
-cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && .venv/bin/pytest
-cd frontend && npm run format:check && npm run lint && npm run typecheck && npm test && npm run build
+npm run lint && npm test && npm run build && npm run i18n:check
 ```
-
-## Frontend conventions
-
-- RTL everywhere: use logical utilities (`ps-`, `me-`, `start-`, `text-start`), not left/right.
-- Colours only through the tokens in `src/app/styles.css` (`bg-surface`, `text-ink-2`, `text-debt` …) so both themes hold.
-- The CSP forbids inline scripts; anything that must run before React lives in `public/`.
-- In this Chromium, `window.scrollTo` returns a Promise — never use it as an effect's expression body.

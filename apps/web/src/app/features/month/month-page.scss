@@ -1,0 +1,117 @@
+@use '../../../styles/surface';
+
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-1);
+  flex-wrap: wrap;
+
+  &__month {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tz-space-2);
+    min-block-size: 44px;
+    padding: 0 var(--tz-space-4);
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--mat-sys-corner-full);
+    background: var(--tz-card);
+    color: var(--mat-sys-on-surface);
+    font: var(--mat-sys-title-medium);
+    font-family: inherit;
+    cursor: pointer;
+
+    mat-icon {
+      font-size: var(--tz-icon-sm);
+      color: var(--mat-sys-primary);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--mat-sys-primary) 6%, var(--tz-card));
+    }
+  }
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--tz-space-3);
+
+  @media (max-width: 960px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tz-space-2) var(--tz-space-5);
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+
+  tz-amount {
+    color: var(--mat-sys-on-surface);
+    font-weight: 600;
+  }
+}
+
+.tabs {
+  display: block;
+  overflow-x: auto;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--tz-space-3);
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+ul.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tz-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.bars__head {
+  display: flex;
+  align-items: center;
+  gap: var(--tz-space-2);
+
+  mat-icon {
+    font-size: var(--tz-icon-sm);
+    color: var(--mat-sys-primary);
+  }
+
+  tz-amount {
+    font-weight: 600;
+  }
+}
+
+.bars__track {
+  block-size: 8px;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--tz-well);
+  overflow: hidden;
+
+  span {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--mat-sys-primary);
+    transition: inline-size 300ms var(--tz-ease-emphasized);
+  }
+}

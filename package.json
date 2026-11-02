@@ -1,0 +1,30 @@
+{
+  "name": "taraz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Taraz — patient balance ledger for a dental practice",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run start:dev --workspace=api",
+    "dev:web": "npm run start --workspace=web",
+    "build": "npm run build --workspace=api && npm run build --workspace=web",
+    "lint": "npm run lint --workspace=api && npm run lint --workspace=web",
+    "migration:run": "npm run migration:run --workspace=api",
+    "seed": "npm run seed --workspace=api",
+    "seed:demo": "npm run seed:demo --workspace=api",
+    "import": "npm run import --workspace=api --",
+    "test": "npm run test --workspace=api -- --runInBand && npm run test --workspace=web -- --watch=false",
+    "test:e2e": "npm run test:e2e --workspace=api",
+    "i18n:check": "npm run i18n:check --workspace=web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
