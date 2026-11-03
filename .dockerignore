@@ -1,0 +1,22 @@
+.git
+.github
+.claude
+**/.DS_Store
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+**/*.tsbuildinfo
+# Patient data and secrets never enter an image.
+**/*.xlsx
+**/*.xls
+**/*.numbers
+**/*.csv
+**/*.sql
+**/*.dump
+**/*.backup
+**/data
+**/.env
+**/.env.*
+ops
+*.md
